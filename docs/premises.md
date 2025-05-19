@@ -1,5 +1,10 @@
 # What is this project?
 
+> [!important]
+> Just found out taht there is such thing as `rsync`... Therefore,
+> this project aims to implement some subset of `rsync` functionality.
+> It looks however that it'll have some unique features (other deamons discovery etc.).
+
 Sync filesystem contents between given tree mount points.
 
 E.g. given following file hierarchy on host A:
@@ -45,5 +50,39 @@ Alternatively I could try to implement [Service location protocol](https://en.wi
 
 How do I discover hosts on local network, btw? `nmap -sP <addr>/<mask-n-bits>`, e.g. `nmap -sP 192.168.100.1/24` & parse the output.
 
-Okay, let's now assume, that I've managed to discover clients with the `dsync`.
+Okay, let's now assume, that I've managed to discover clients with the `dsync`. What now? I need to store in local storage
+the exposed file paths / file hierarchy roots.
 
+Then, I need to be able to request exposed file paths from other hosts & be able to request their mount on local disk.
+
+And that is basically it.
+
+Additionally I want to be able to sync with ad-hoc clients, e.g. when a external disk is connected to host I want 
+to be able to treat some indicated file hierarchy as the sync-root and sync with it!
+
+# System design
+
+## Host infrastructure
+
+Each host will have running daemon / server on some port `PN`.
+
+To interface with the server there will be CLI client & in the future Web client.
+
+## Server identification
+
+Each server will have unique ID that should be unchanged - if changed it'll be treated as new identity by peers.
+Each server just generates its own uuid.
+
+## Discovery
+
+Each server listens for connections on predetermined & agreed upon port number `PN`.
+When requested, server tries to discover other servers in LAN by using `nmap` (for host discovery) & then sending `Hello` message & waiting up to 10s (timeout should be configurable).
+If it receives a response - a peer is discovered & should be cached locally for use in later requests.
+
+## File transfer
+
+For the sake of fun I'll came up with custom protocol, however the program should be written in such way, that I can 
+replace it with some already functioning protocol someday.
+
+1. I want to sync only the files that have changed.
+2. I want to have partial transfer -> that is partition each file into chunks & transfer the chunks.
