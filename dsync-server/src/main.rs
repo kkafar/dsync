@@ -1,3 +1,5 @@
+mod utils;
+
 use hello_world::greeter_server::{Greeter, GreeterServer};
 use hello_world::{HelloReply, HelloRequest};
 use tonic::transport::Server;
@@ -28,13 +30,25 @@ impl Greeter for MyGreeter {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Hello, world!");
-    let addr = "[::1]:50051".parse()?;
-    let greeter = MyGreeter::default();
+    // let addr = "[::1]:50051".parse()?;
+    // let greeter = MyGreeter::default();
 
-    Server::builder()
-        .add_service(GreeterServer::new(greeter))
-        .serve(addr)
-        .await?;
+    if !utils::check_binary_exists("nmap") {
+        // return Box::new(Err("nmap is not installed"));
+        return Ok(());
+    }
 
-    Ok(())
+    let Some(ipv4_addrs) = utils::discover_hosts_in_local_network() else {
+        // return Box::new(Err("Failed to find hosts in locla network"));
+        return Ok(());
+    };
+
+    println!("{:?}", ipv4_addrs);
+
+    // Server::builder()
+    //     .add_service(GreeterServer::new(greeter))
+    //     .serve(addr)
+    //     .await?;
+
+    return Ok(());
 }
