@@ -34,13 +34,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let greeter = MyGreeter::default();
 
     if !utils::check_binary_exists("nmap") {
-        // return Box::new(Err("nmap is not installed"));
-        return Ok(());
+        Err("nmap is not installed")?;
+    }
+
+    if !utils::check_binary_exists("arp") {
+        Err("arp is not installed")?;
     }
 
     let Some(ipv4_addrs) = utils::discover_hosts_in_local_network() else {
-        // return Box::new(Err("Failed to find hosts in locla network"));
-        return Ok(());
+        return Err("Failed to find hosts in local network")?;
     };
 
     println!("{:?}", ipv4_addrs);
