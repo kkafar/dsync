@@ -1,7 +1,9 @@
+mod logging;
 mod utils;
 
 use client_api::client_api_server::{ClientApi, ClientApiServer};
 use client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
+use log::error;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 
@@ -18,6 +20,8 @@ impl ClientApi for ClientApiImpl {
         &self,
         _: Request<ListHostsRequest>,
     ) -> Result<Response<ListHostsResponse>, Status> {
+        log::info!("Received ListHostsRequest");
+
         // TODO: this could be done once, on server start.
         if !utils::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
@@ -46,9 +50,12 @@ impl ClientApi for ClientApiImpl {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Hello, world!");
+    let _ = logging::configure_logging();
+
     let addr = "[::1]:50051".parse()?;
     let client_api_instance = ClientApiImpl::default();
+
+    log::info!("Starting server at {:?}", addr);
 
     Server::builder()
         .add_service(ClientApiServer::new(client_api_instance))
