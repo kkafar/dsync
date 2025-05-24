@@ -10,9 +10,9 @@ message ListHostsRequest {
 }
 
 message ListHostsResponse {
-    repeated HostDescription hostDescriptions = 1;
+    repeated HostDescription host_descriptions = 1;
 }
 
 service ClientApi {
-    rpc ListHost(ListHostsRequest) returns (ListHostsResponse);
+    rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
 }
