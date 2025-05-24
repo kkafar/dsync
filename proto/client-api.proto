@@ -1,0 +1,18 @@
+syntax = "proto3";
+package client.api;
+
+message HostDescription {
+    string ipv4_addr = 1;
+}
+
+message ListHostsRequest {
+
+}
+
+message ListHostsResponse {
+    repeated HostDescription hostDescriptions = 1;
+}
+
+service ClientApi {
+    rpc ListHost(ListHostsRequest) returns (ListHostsResponse);
+}
