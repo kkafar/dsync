@@ -1,3 +1,5 @@
+mod logging;
+
 use client_api::ListHostsRequest;
 use client_api::client_api_client::ClientApiClient;
 
@@ -7,7 +9,7 @@ pub mod client_api {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Hello, world from client!");
+    log::info!("dsync-client start");
 
     let mut client = ClientApiClient::connect("http://[::1]:50051").await?;
 
@@ -15,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let response = client.list_hosts(request).await?;
 
-    println!("RESPONSE={:?}", response);
+    log::info!("RESPONSE={:?}", response);
 
     Ok(())
 }
