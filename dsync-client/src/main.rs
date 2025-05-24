@@ -9,6 +9,8 @@ pub mod client_api {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _ = logging::configure_logging();
+
     log::info!("dsync-client start");
 
     let mut client = ClientApiClient::connect("http://[::1]:50051").await?;
