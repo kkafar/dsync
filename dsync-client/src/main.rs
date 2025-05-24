@@ -1,11 +1,5 @@
 use client_api::ListHostsRequest;
 use client_api::client_api_client::ClientApiClient;
-use hello_world::HelloRequest;
-use hello_world::greeter_client::GreeterClient;
-
-pub mod hello_world {
-    tonic::include_proto!("helloworld");
-}
 
 pub mod client_api {
     tonic::include_proto!("client.api");
@@ -14,16 +8,6 @@ pub mod client_api {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Hello, world from client!");
-
-    // let mut client = GreeterClient::connect("http://[::1]:50051").await?;
-
-    // let request = tonic::Request::new(HelloRequest {
-    //     name: "Tonic".into(),
-    // });
-
-    // let response = client.say_hello(request).await?;
-
-    // println!("RESPONSE={:?}", response);
 
     let mut client = ClientApiClient::connect("http://[::1]:50051").await?;
 
