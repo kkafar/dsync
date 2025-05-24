@@ -15,15 +15,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
       - name: Build
         run: cargo build --verbose --bin dsync-server
-      # - name: Run tests
-      #   run: cargo test --verbose
 
   build-client:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
       - name: Build
         run: cargo build --verbose --bin dsync-client
