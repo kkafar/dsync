@@ -23,7 +23,7 @@ pub(crate) fn check_binary_exists(binary_name: &str) -> bool {
     }
 }
 
-pub(crate) fn discover_hosts_in_local_network() -> Option<Vec<Ipv4Addr>> {
+pub(crate) fn discover_hosts_in_local_network(require_nmap_pass: bool) -> Option<Vec<Ipv4Addr>> {
     let nmap_result = std::process::Command::new("nmap")
         .arg("-sP")
         .arg("192.168.100.1/24")
@@ -79,15 +79,12 @@ pub(crate) fn discover_hosts_in_local_network() -> Option<Vec<Ipv4Addr>> {
             assert!(!ip_slice.is_empty());
             return Some(ip_slice);
         })
-        .map(|ip_slice| Ipv4Addr::from_str(ip_slice))
-        .filter_map(|maybe_addr| {
-            if maybe_addr.is_ok() {
-                return unsafe { Some(maybe_addr.unwrap_unchecked()) };
-            } else {
-                println!("Failed to parse addr");
-                return None;
-            }
+        .map(|ip_slice| {
+            Ipv4Addr::from_str(ip_slice).inspect_err(|err| {
+                println!("Failed to parse addr with err: {err}");
+            })
         })
+        .filter_map(Result::ok)
         .collect();
 
     return Some(ipv4_list);
