@@ -2,35 +2,11 @@ mod utils;
 
 use client_api::client_api_server::{ClientApi, ClientApiServer};
 use client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
-use hello_world::greeter_server::{Greeter, GreeterServer};
-use hello_world::{HelloReply, HelloRequest};
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 
-pub mod hello_world {
-    tonic::include_proto!("helloworld");
-}
-
 pub mod client_api {
     tonic::include_proto!("client.api");
-}
-
-#[derive(Debug, Default)]
-pub struct MyGreeter {}
-
-#[tonic::async_trait]
-impl Greeter for MyGreeter {
-    async fn say_hello(
-        &self,
-        request: Request<HelloRequest>,
-    ) -> Result<Response<HelloReply>, Status> {
-        println!("Got a request: {:?}", request);
-        let reply = HelloReply {
-            message: format!("Hello {}!", request.into_inner().name),
-        };
-
-        Ok(Response::new(reply))
-    }
 }
 
 #[derive(Debug, Default)]
@@ -72,11 +48,9 @@ impl ClientApi for ClientApiImpl {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Hello, world!");
     let addr = "[::1]:50051".parse()?;
-    let greeter = MyGreeter::default();
     let client_api_instance = ClientApiImpl::default();
 
     Server::builder()
-        .add_service(GreeterServer::new(greeter))
         .add_service(ClientApiServer::new(client_api_instance))
         .serve(addr)
         .await?;
