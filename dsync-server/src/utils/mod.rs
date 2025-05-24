@@ -58,7 +58,7 @@ pub(crate) fn discover_hosts_in_local_network(require_nmap_pass: bool) -> Option
         .lines()
         .filter(|&line| {
             println!("Parsing line: {line}");
-            return !line.contains("<incomplete>") && !line.contains("_gateway");
+            return !line.contains("incomplete") && !line.contains("_gateway");
         })
         .filter_map(|line| {
             println!("Handling line: {line}");
