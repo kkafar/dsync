@@ -312,11 +312,20 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "dsync-proto",
  "log",
  "log4rs",
  "prost",
  "thiserror 2.0.12",
  "tokio",
+ "tonic",
+]
+
+[[package]]
+name = "dsync-proto"
+version = "0.1.0"
+dependencies = [
+ "prost",
  "tonic",
  "tonic-build",
 ]
@@ -326,13 +335,13 @@ name = "dsync-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dsync-proto",
  "log",
  "log4rs",
  "prost",
  "thiserror 2.0.12",
  "tokio",
  "tonic",
- "tonic-build",
 ]
 
 [[package]]
