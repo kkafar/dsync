@@ -12,6 +12,4 @@ anyhow = "1.0.98"
 log4rs = { version = "1.3.0", features = ["console_appender"] }
 log = "0.4.27"
 clap = { version = "4.5.38", features = ["derive"] }
-
-[build-dependencies]
-tonic-build = "*"
+dsync-proto = { path = "../dsync-proto" }

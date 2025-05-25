@@ -1,4 +1,4 @@
-use crate::client_api::{ListHostsRequest, client_api_client::ClientApiClient};
+use dsync_proto::client_api::{ListHostsRequest, client_api_client::ClientApiClient};
 
 use super::Commands;
 
