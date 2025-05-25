@@ -10,7 +10,17 @@ impl Commands {
 
         let response = client.list_hosts(request).await?;
 
-        log::info!("RESPONSE={:?}", response);
+        log::info!("Received response from server");
+        log::debug!("{:?}", response);
+
+        let response_payload = response.into_inner();
+        response_payload
+            .host_descriptions
+            .into_iter()
+            .for_each(|desc| {
+                println!("Host at: {}, name: <not-implemented>", desc.ipv4_addr);
+            });
+
         anyhow::Ok(())
     }
 }
