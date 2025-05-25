@@ -9,6 +9,17 @@
         "path": "buf",
         "arguments": ["beta", "lsp"]
       }
+    },
+    "rust-analyzer": {
+      "initialization_options": {
+        "checkOnSave": true,
+        "cargo": {
+          "loadOutDirsFromCheck": true
+        },
+        "check": {
+          "loadOutDirsFromCheck": true
+        }
+      }
     }
   }
 }
