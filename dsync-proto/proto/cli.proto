@@ -1,5 +1,5 @@
 syntax = "proto3";
-package client.api;
+package cli;
 
 message HostDescription {
     string ipv4_addr = 1;

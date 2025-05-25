@@ -1,15 +1,10 @@
 mod logging;
 mod utils;
 
-use client_api::client_api_server::{ClientApi, ClientApiServer};
-use client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
-use log::error;
+use dsync_proto::client_api::client_api_server::{ClientApi, ClientApiServer};
+use dsync_proto::client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
-
-pub mod client_api {
-    tonic::include_proto!("client.api");
-}
 
 #[derive(Debug, Default)]
 pub struct ClientApiImpl {}
