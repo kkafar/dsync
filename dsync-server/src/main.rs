@@ -1,6 +1,13 @@
 mod logging;
 mod utils;
 
+mod models;
+mod schema;
+
+use std::env;
+
+use diesel::{Connection, SqliteConnection};
+use dotenvy::dotenv;
 use dsync_proto::client_api::client_api_server::{ClientApi, ClientApiServer};
 use dsync_proto::client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
 use tonic::transport::Server;
@@ -46,6 +53,14 @@ impl ClientApi for ClientApiImpl {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = logging::configure_logging();
+
+    log::trace!("dsync_server start");
+    log::info!("Loading env...");
+    dotenv().ok();
+
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let connection = SqliteConnection::establish(&db_url).expect("Failed to open db connection");
 
     let addr = "[::1]:50051".parse()?;
     let client_api_instance = ClientApiImpl::default();
