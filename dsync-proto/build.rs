@@ -1,16 +1,18 @@
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client_api_proto_path: PathBuf = "./proto/cli.proto".into();
-
     // Simulate behaviour of tonic_build::compile_protos
 
-    let parent = client_api_proto_path
-        .parent()
-        .expect("expected a parent directory");
+    let proto_root_dir: PathBuf = "./proto".into();
+
+    let client_api_proto_path = proto_root_dir.join("cli.proto");
+    let server_api_proto_path = proto_root_dir.join("server.proto");
 
     tonic_build::configure()
         .out_dir("proto-generated/")
-        .compile_protos(&[&client_api_proto_path], &[parent])?;
+        .compile_protos(
+            &[&client_api_proto_path, &server_api_proto_path],
+            &[proto_root_dir],
+        )?;
     Ok(())
 }
