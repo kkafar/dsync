@@ -1,5 +1,11 @@
 use std::path::PathBuf;
 
+pub(crate) mod keys {
+    pub const DATABASE_URL: &str = "DATABASE_URL";
+    pub const ENV_FILE: &str = "ENV_FILE";
+    pub const SERVER_PORT: &str = "SERVER_PORT";
+}
+
 /// Running configuration for the server.
 pub(crate) struct RunConfiguration {
     /// Port the server should listen on.
