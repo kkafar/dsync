@@ -8,7 +8,6 @@ use dsync_proto::p2p::{self, HelloThereRequest, HelloThereResponse};
 use tonic::{Request, Response, Status};
 
 use crate::models::ThisServerInfoRow;
-use crate::schema::server_info;
 
 use super::global_context::GlobalContext;
 
