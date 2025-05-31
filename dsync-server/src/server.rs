@@ -38,7 +38,7 @@ impl Server {
             .ensure_db_record_exists(|| self.create_this_server_info("main".to_owned()))
             .await;
 
-        let addr_str = format!("[::1]:{}", self.run_config.port);
+        let addr_str = format!("127.0.0.1:{}", self.run_config.port);
 
         let addr = addr_str.parse()?;
 
