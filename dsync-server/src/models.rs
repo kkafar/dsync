@@ -21,7 +21,7 @@ pub struct LocalServerBaseInfoRow {
 #[derive(Queryable, Selectable, Insertable, Clone)]
 #[diesel(table_name = crate::schema::peer_addr_v4)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
-pub struct PeerAddrV4 {
+pub struct PeerAddrV4Row {
     pub uuid: String,
     pub ipv4_addr: String,
     pub discovery_time: i64,
