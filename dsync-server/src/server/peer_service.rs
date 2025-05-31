@@ -8,7 +8,6 @@ use dsync_proto::p2p::{self, HelloThereRequest, HelloThereResponse};
 use tonic::{Request, Response, Status};
 
 use crate::models::ThisServerInfoRow;
-use crate::schema::server_info;
 
 use super::global_context::GlobalContext;
 
@@ -50,18 +49,19 @@ impl PeerService for PeerServiceImpl {
         &self,
         request: Request<HelloThereRequest>,
     ) -> Result<Response<HelloThereResponse>, Status> {
-        log::info!("Received hello_there rpc");
+        log::info!(target: "pslog", "Received hello_there rpc");
 
         let Some(peer_info) = request.into_inner().server_info else {
+            log::trace!(target: "pslog", "Rejecting request due to missing peer info");
             return Err(tonic::Status::invalid_argument("Missing peer info"));
         };
 
-        log::debug!("Connectinng peer: {}", peer_info.hostname);
+        log::debug!(target: "pslog", "Connectinng peer: {}", peer_info.hostname);
 
         let server_info = match self.retrieve_this_server_info().await {
             Ok(data) => data,
             Err(err) => {
-                log::error!("[PeerService] Error while fetching this server info {err}");
+                log::error!(target: "pslog", "Error while fetching this server info {err}");
                 return Err(tonic::Status::internal(format!(
                     "Failed to fetch peer info with error: {err}"
                 )));
