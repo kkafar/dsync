@@ -17,3 +17,4 @@ diesel = { version = "2.2.0", features = [
 ] }
 dsync-proto = { path = "../dsync-proto" }
 dotenvy = "0.15"
+uuid = { version = "1.17.0", features = ["v4"] }
