@@ -9,7 +9,7 @@ use dsync_proto::{
 use global_context::GlobalContext;
 use uuid::Uuid;
 
-use crate::models::ThisServerInfoRow;
+use crate::models::LocalServerBaseInfoRow;
 
 pub mod api;
 pub mod config;
@@ -61,8 +61,8 @@ impl Server {
         anyhow::Ok(())
     }
 
-    fn create_this_server_info(&self, name: String) -> ThisServerInfoRow {
-        return ThisServerInfoRow {
+    fn create_this_server_info(&self, name: String) -> LocalServerBaseInfoRow {
+        return LocalServerBaseInfoRow {
             uuid: Uuid::new_v4().to_string(),
             name,
             hostname: self.get_hostname().expect("Error while resolving hostname"),

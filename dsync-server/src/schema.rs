@@ -1,7 +1,23 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    server_info (uuid) {
+    local_server_base_info (uuid) {
+        uuid -> Text,
+        name -> Text,
+        hostname -> Text,
+    }
+}
+
+diesel::table! {
+    peer_addr_v4 (uuid) {
+        uuid -> Text,
+        ipv4_addr -> Text,
+        discovery_time -> BigInt,
+    }
+}
+
+diesel::table! {
+    peer_server_base_info (uuid) {
         uuid -> Text,
         name -> Text,
         hostname -> Text,
@@ -9,15 +25,10 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    this_server_info (uuid) {
-        uuid -> Text,
-        name -> Text,
-        hostname -> Text,
-    }
-}
+diesel::joinable!(peer_addr_v4 -> peer_server_base_info (uuid));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    server_info,
-    this_server_info,
+    local_server_base_info,
+    peer_addr_v4,
+    peer_server_base_info,
 );

@@ -3,7 +3,7 @@ use dsync_proto::p2p::{self, HelloThereRequest, HelloThereResponse};
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
-use crate::models::ThisServerInfoRow;
+use crate::models::LocalServerBaseInfoRow;
 
 use super::global_context::GlobalContext;
 
@@ -17,7 +17,7 @@ impl PeerServiceImpl {
         Self { ctx }
     }
 
-    async fn retrieve_this_server_info(&self) -> anyhow::Result<ThisServerInfoRow> {
+    async fn retrieve_this_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
         anyhow::Ok(self.ctx.db_proxy.fetch_this_server_info().await?)
     }
 }
