@@ -21,7 +21,6 @@ diesel::table! {
         uuid -> Text,
         name -> Text,
         hostname -> Text,
-        address -> Text,
     }
 }
 

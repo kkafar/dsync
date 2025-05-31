@@ -7,8 +7,7 @@ create table if not exists local_server_base_info (
 create table if not exists peer_server_base_info (
     uuid text not null unique primary key,
     name text not null,
-    hostname text not null,
-    address text not null
+    hostname text not null
 );
 
 create table if not exists peer_addr_v4 (
