@@ -10,6 +10,16 @@ pub struct ServerInfo {
     #[prost(string, tag = "4")]
     pub address: ::prost::alloc::string::String,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HelloThereRequest {
+    #[prost(message, optional, tag = "1")]
+    pub server_info: ::core::option::Option<ServerInfo>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HelloThereResponse {
+    #[prost(message, optional, tag = "2")]
+    pub server_info: ::core::option::Option<ServerInfo>,
+}
 /// Generated client implementations.
 pub mod peer_service_client {
     #![allow(
@@ -106,8 +116,11 @@ pub mod peer_service_client {
         /// expects peer server info.
         pub async fn hello_there(
             &mut self,
-            request: impl tonic::IntoRequest<super::ServerInfo>,
-        ) -> std::result::Result<tonic::Response<super::ServerInfo>, tonic::Status> {
+            request: impl tonic::IntoRequest<super::HelloThereRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::HelloThereResponse>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -145,8 +158,11 @@ pub mod peer_service_server {
         /// expects peer server info.
         async fn hello_there(
             &self,
-            request: tonic::Request<super::ServerInfo>,
-        ) -> std::result::Result<tonic::Response<super::ServerInfo>, tonic::Status>;
+            request: tonic::Request<super::HelloThereRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::HelloThereResponse>,
+            tonic::Status,
+        >;
     }
     #[derive(Debug)]
     pub struct PeerServiceServer<T> {
@@ -227,16 +243,18 @@ pub mod peer_service_server {
                 "/server.PeerService/HelloThere" => {
                     #[allow(non_camel_case_types)]
                     struct HelloThereSvc<T: PeerService>(pub Arc<T>);
-                    impl<T: PeerService> tonic::server::UnaryService<super::ServerInfo>
+                    impl<
+                        T: PeerService,
+                    > tonic::server::UnaryService<super::HelloThereRequest>
                     for HelloThereSvc<T> {
-                        type Response = super::ServerInfo;
+                        type Response = super::HelloThereResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::ServerInfo>,
+                            request: tonic::Request<super::HelloThereRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {

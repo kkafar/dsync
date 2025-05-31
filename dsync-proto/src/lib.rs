@@ -4,3 +4,7 @@
 pub mod client_api {
     include!("../proto-generated/cli.rs");
 }
+
+pub mod p2p {
+    include!("../proto-generated/server.rs");
+}
