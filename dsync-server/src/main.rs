@@ -1,78 +1,28 @@
-mod api;
 mod cli;
 mod logging;
 mod models;
 mod schema;
+mod server;
 mod utils;
 
 use std::env;
-use std::process::Command;
 
 use clap::Parser;
 use cli::Args;
-use diesel::{Connection, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
-use dsync_proto::client_api::client_api_server::ClientApiServer;
-use models::ThisServerInfoRow;
-use tonic::transport::Server;
-use uuid::Uuid;
 
-fn ensure_db_record_exists(connection: &mut SqliteConnection) {
-    use self::schema::this_server_info::dsl::*;
-
-    let results = this_server_info
-        .select(ThisServerInfoRow::as_select())
-        .load(connection)
-        .expect("Error while loading configuration");
-
-    if results.is_empty() {
-        log::info!("Server info table empty - generating server info");
-        let server_info = create_this_server_info("main".to_owned());
-        save_this_server_info_to_db(connection, server_info);
-    } else if results.len() == 1 {
-        log::trace!("Server info exists");
-    } else {
-        log::error!("Corrupted state of this_server_info! More than single record present!");
-        panic!("Corrupted state of this_server_info! More than single record present!");
-    }
-}
-
-fn save_this_server_info_to_db(connection: &mut SqliteConnection, server_info: ThisServerInfoRow) {
-    use self::schema::this_server_info;
-    diesel::insert_into(this_server_info::table)
-        .values(&server_info)
-        .execute(connection)
-        .expect("Failed to insert server info to db");
-}
-
-fn create_this_server_info(name: String) -> ThisServerInfoRow {
-    return ThisServerInfoRow {
-        uuid: Uuid::new_v4().to_string(),
-        name,
-        hostname: get_hostname().expect("Error while resolving hostname"),
-    };
-}
-
-fn get_hostname() -> anyhow::Result<String> {
-    let hostname_output = Command::new("hostname")
-        .output()
-        .expect("Error while running hostname command");
-    let output_string = String::from_utf8(hostname_output.stdout)
-        .expect("Failed to convert hostname command output to string");
-    return anyhow::Ok(output_string);
-}
-
-fn configure_env(maybe_env_file: Option<impl AsRef<std::path::Path>>) -> anyhow::Result<()> {
+fn configure_env(
+    maybe_env_file: Option<&std::path::PathBuf>,
+) -> anyhow::Result<std::path::PathBuf> {
     log::info!("Loading env...");
     if let Some(env_file) = maybe_env_file {
-        let env_file = env_file.as_ref();
         let _ = dotenvy::from_path(env_file)?;
         log::info!("Env loaded from {:?}", env_file);
+        return Ok(env_file.to_owned());
     } else {
         let env_file = dotenvy::dotenv()?;
         log::info!("Env loaded from {:?}", env_file);
+        return Ok(env_file);
     }
-
-    anyhow::Ok(())
 }
 
 #[tokio::main]
@@ -82,24 +32,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
 
-    configure_env(args.env_file).expect("Failure while environment initialization");
+    let env_file_path =
+        configure_env(args.env_file.as_ref()).expect("Failure while environment initialization");
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL env var must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL env var must be set");
 
-    let mut connection =
-        SqliteConnection::establish(&db_url).expect("Failed to open db connection");
+    let server_instance = server::Server::new(server::config::RunConfiguration {
+        port: 50051,
+        database_url: std::path::PathBuf::from(database_url),
+        env_file_path,
+    });
 
-    ensure_db_record_exists(&mut connection);
-
-    let addr = "[::1]:50051".parse()?;
-    let client_api_instance = api::ClientApiImpl::default();
-
-    log::info!("Starting server at {:?}", addr);
-
-    Server::builder()
-        .add_service(ClientApiServer::new(client_api_instance))
-        .serve(addr)
-        .await?;
+    server_instance.run().await?;
 
     return Ok(());
 }
