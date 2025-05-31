@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::peer_server_base_info)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct PeerServerBaseInfoRow {
