@@ -69,7 +69,7 @@ impl ClientApi for ClientApiImpl {
 impl ClientApiImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
         // Try to connect with the host
-        let remote_service_socket = format!("{ipv4_addr}:50051");
+        let remote_service_socket = format!("{ipv4_addr}:{}", self.ctx.run_config.port);
         let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
         {
             Ok(conn) => conn,
