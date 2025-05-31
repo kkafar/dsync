@@ -10,9 +10,7 @@ use std::{env, path::PathBuf};
 use clap::Parser;
 use cli::Args;
 
-fn configure_env(
-    maybe_env_file: Option<&std::path::PathBuf>,
-) -> anyhow::Result<std::path::PathBuf> {
+fn load_env(maybe_env_file: Option<&std::path::PathBuf>) -> anyhow::Result<std::path::PathBuf> {
     log::info!("Loading env...");
     if let Some(env_file) = maybe_env_file {
         let _ = dotenvy::from_path(env_file)?;
@@ -39,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env_file_path_input = args.env_file.as_ref().or(env_file_path_from_env.as_ref());
 
     let env_file_path =
-        configure_env(env_file_path_input).expect("Failure while environment initialization");
+        load_env(env_file_path_input).expect("Failure while environment initialization");
 
     let database_url = env::var(server::config::keys::DATABASE_URL).expect(&format!(
         "{} env variable must be set",
