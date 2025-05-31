@@ -1,9 +1,14 @@
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::models::{PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::utils;
 
 use dsync_proto::client_api::client_api_server::ClientApi;
-use dsync_proto::client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
+use dsync_proto::client_api::{
+    self, DiscoverHostsRequest, DiscoverHostsResponse, HostDescription, ListHostsRequest,
+    ListHostsResponse,
+};
 use dsync_proto::p2p::peer_service_client::PeerServiceClient;
 use dsync_proto::p2p::{HelloThereRequest, ServerInfo};
 use tonic::{Request, Response, Status};
@@ -28,32 +33,7 @@ impl ClientApi for ClientApiImpl {
     ) -> Result<Response<ListHostsResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
-        // TODO: this could be done once, on server start.
-        if !utils::check_binary_exists("nmap") {
-            return Err(tonic::Status::internal("Missing binary: nmap"));
-        }
-
-        if !utils::check_binary_exists("arp") {
-            return Err(tonic::Status::internal("Missing binary: arp"));
-        }
-
-        let Some(ipv4_addrs) = utils::discover_hosts_in_local_network(true) else {
-            return Err(tonic::Status::internal(
-                "Failed to find hosts in local network",
-            ));
-        };
-
-        let mut serial_responses: Vec<ServerInfo> = Vec::new();
-
-        // This could be definitely improved, however it's fine for now.
-        for addr in ipv4_addrs.iter() {
-            match self.check_hello(&addr.to_string()).await {
-                Some(server_info) => serial_responses.push(server_info),
-                None => {
-                    log::trace!(target: "pslog", "Have not found deamon at {addr}");
-                }
-            }
-        }
+        let serial_responses = self.host_discovery_impl().await.unwrap();
 
         let host_descriptions: Vec<HostDescription> = serial_responses
             .into_iter()
@@ -63,6 +43,25 @@ impl ClientApi for ClientApiImpl {
             .collect();
 
         return Ok(Response::new(ListHostsResponse { host_descriptions }));
+    }
+
+    async fn discover_hosts(
+        &self,
+        request: Request<DiscoverHostsRequest>,
+    ) -> Result<Response<DiscoverHostsResponse>, Status> {
+        let serial_responses = self.host_discovery_impl().await.unwrap();
+
+        return Ok(Response::new(DiscoverHostsResponse {
+            server_info: serial_responses
+                .into_iter()
+                .map(|info| client_api::ServerInfo {
+                    uuid: info.uuid,
+                    name: info.name,
+                    hostname: info.hostname,
+                    address: info.address,
+                })
+                .collect(),
+        }));
     }
 }
 
@@ -79,7 +78,7 @@ impl ClientApiImpl {
             }
         };
 
-        let server_info = self.ctx.db_proxy.fetch_this_server_info().await.ok()?;
+        let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
             server_info: Some(ServerInfo {
@@ -108,5 +107,77 @@ impl ClientApiImpl {
         remote_server_info.address = remote_service_socket;
 
         Some(remote_server_info)
+    }
+
+    async fn host_discovery_impl(&self) -> Result<Vec<ServerInfo>, Status> {
+        // TODO: this could be done once, on server start.
+        if !utils::check_binary_exists("nmap") {
+            return Err(tonic::Status::internal("Missing binary: nmap"));
+        }
+
+        if !utils::check_binary_exists("arp") {
+            return Err(tonic::Status::internal("Missing binary: arp"));
+        }
+
+        let Some(ipv4_addrs) = utils::discover_hosts_in_local_network() else {
+            return Err(tonic::Status::internal(
+                "Failed to find hosts in local network",
+            ));
+        };
+
+        let mut serial_responses: Vec<ServerInfo> = Vec::new();
+
+        // This could be definitely improved, however it's fine for now.
+        for addr in ipv4_addrs.iter() {
+            match self.check_hello(&addr.to_string()).await {
+                Some(server_info) => serial_responses.push(server_info),
+                None => {
+                    log::trace!(target: "pslog", "Have not found deamon at {addr}");
+                }
+            }
+        }
+
+        let discovery_time: i64 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            .try_into()
+            .unwrap();
+
+        // Cache discovered hosts locally
+        {
+            let peer_base_info: Vec<PeerServerBaseInfoRow> = serial_responses
+                .iter()
+                .map(|info| PeerServerBaseInfoRow {
+                    // TODO: Could use only references in this struct, avoiding all the copies
+                    uuid: info.uuid.clone(),
+                    name: info.name.clone(),
+                    hostname: info.hostname.clone(),
+                })
+                .collect();
+
+            self.ctx
+                .db_proxy
+                .save_peer_server_base_info(&peer_base_info)
+                .await;
+        }
+
+        {
+            let peer_addr_info: Vec<PeerAddrV4Row> = serial_responses
+                .iter()
+                .map(|info| PeerAddrV4Row {
+                    uuid: info.uuid.clone(),
+                    ipv4_addr: info.address.clone(),
+                    discovery_time,
+                })
+                .collect();
+
+            self.ctx
+                .db_proxy
+                .save_peer_server_addr_info(&peer_addr_info)
+                .await;
+        }
+
+        Ok(serial_responses)
     }
 }

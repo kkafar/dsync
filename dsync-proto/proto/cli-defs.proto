@@ -1,0 +1,11 @@
+// Repeated server-defs, due to some symbol visibility issues.
+
+syntax = "proto3";
+package cli;
+
+message ServerInfo {
+    string uuid = 1;
+    string name = 2;
+    string hostname = 3;
+    string address = 4;
+}

@@ -17,8 +17,8 @@ impl PeerServiceImpl {
         Self { ctx }
     }
 
-    async fn retrieve_this_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
-        anyhow::Ok(self.ctx.db_proxy.fetch_this_server_info().await?)
+    async fn retrieve_local_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
+        anyhow::Ok(self.ctx.db_proxy.fetch_local_server_info().await?)
     }
 }
 
@@ -37,7 +37,7 @@ impl PeerService for PeerServiceImpl {
 
         log::debug!(target: "pslog", "Connectinng peer: {}", peer_info.hostname);
 
-        let server_info = match self.retrieve_this_server_info().await {
+        let server_info = match self.retrieve_local_server_info().await {
             Ok(data) => data,
             Err(err) => {
                 log::error!(target: "pslog", "Error while fetching this server info {err}");

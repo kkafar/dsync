@@ -4,6 +4,10 @@ use super::Commands;
 
 impl Commands {
     pub(super) async fn handle_list_hosts(self) -> anyhow::Result<()> {
+        self.handle_discover_hosts().await
+    }
+
+    pub(super) async fn handle_discover_hosts(self) -> anyhow::Result<()> {
         let mut client = ClientApiClient::connect("http://127.0.0.1:50051").await?;
 
         let request = tonic::Request::new(ListHostsRequest {});
