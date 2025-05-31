@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 
-use crate::models::ThisServerInfoRow;
+use crate::models::LocalServerBaseInfoRow;
 
 pub(crate) struct DatabaseProxy {
     conn: tokio::sync::Mutex<SqliteConnection>,
@@ -18,18 +18,18 @@ impl DatabaseProxy {
 }
 
 impl DatabaseProxy {
-    pub async fn fetch_this_server_info(&self) -> anyhow::Result<ThisServerInfoRow> {
-        use crate::schema::this_server_info::dsl::*;
+    pub async fn fetch_this_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
+        use crate::schema::local_server_base_info::dsl::*;
         let mut db_conn = self.conn.lock().await;
 
-        let results = this_server_info
-            .select(ThisServerInfoRow::as_select())
+        let results = local_server_base_info
+            .select(LocalServerBaseInfoRow::as_select())
             .load(db_conn.deref_mut())
             .context("Error while loading configuration")?;
 
         if results.len() != 1 {
             return Err(anyhow::anyhow!(
-                "Expected this_server_info to be populated with exactly one record"
+                "Expected local server info table to be populated with exactly one record"
             ));
         }
 
@@ -41,14 +41,14 @@ impl DatabaseProxy {
 
     pub async fn ensure_db_record_exists(
         &self,
-        server_info_factory: impl FnOnce() -> ThisServerInfoRow,
+        server_info_factory: impl FnOnce() -> LocalServerBaseInfoRow,
     ) {
-        use crate::schema::this_server_info::dsl::*;
+        use crate::schema::local_server_base_info::dsl::*;
 
         let mut connection = self.conn.lock().await;
 
-        let results = this_server_info
-            .select(ThisServerInfoRow::as_select())
+        let results = local_server_base_info
+            .select(LocalServerBaseInfoRow::as_select())
             .load(connection.deref_mut())
             .expect("Error while loading configuration");
 
@@ -59,17 +59,21 @@ impl DatabaseProxy {
         } else if results.len() == 1 {
             log::trace!("Server info exists");
         } else {
-            log::error!("Corrupted state of this_server_info! More than single record present!");
-            panic!("Corrupted state of this_server_info! More than single record present!");
+            log::error!(
+                "Corrupted state of local server info db table! More than single record present!"
+            );
+            panic!(
+                "Corrupted state of local server info db table! More than single record present!"
+            );
         }
     }
 
-    pub async fn save_this_server_info(&self, server_info: ThisServerInfoRow) {
-        use crate::schema::this_server_info;
+    pub async fn save_this_server_info(&self, server_info: LocalServerBaseInfoRow) {
+        use crate::schema::local_server_base_info;
 
         let mut connection = self.conn.lock().await;
 
-        diesel::insert_into(this_server_info::table)
+        diesel::insert_into(local_server_base_info::table)
             .values(&server_info)
             .execute(connection.deref_mut())
             .expect("Failed to insert server info to db");

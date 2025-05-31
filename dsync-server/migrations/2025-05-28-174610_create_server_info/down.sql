@@ -1,4 +1,6 @@
 -- This file should undo anything in `up.sql`
-drop table this_server_info;
+drop table local_server_base_info;
 
-drop table server_info;
+drop table peer_server_base_info;
+
+drop table peer_addr_v4;
