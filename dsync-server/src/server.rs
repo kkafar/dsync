@@ -9,6 +9,7 @@ use crate::models::ThisServerInfoRow;
 
 pub mod api;
 pub mod config;
+pub mod peer_service;
 
 pub(crate) struct Server {
     run_config: RunConfiguration,
@@ -32,6 +33,8 @@ impl Server {
 
         let addr = addr_str.parse()?;
         let client_api_instance = api::ClientApiImpl::default();
+
+        // let peer_service_instance api::
 
         log::info!("Starting server at {:?}", addr);
 
