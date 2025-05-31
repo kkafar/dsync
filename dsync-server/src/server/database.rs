@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 
-use crate::models::LocalServerBaseInfoRow;
+use crate::models::{LocalServerBaseInfoRow, PeerServerBaseInfoRow};
 
 pub(crate) struct DatabaseProxy {
     conn: tokio::sync::Mutex<SqliteConnection>,
@@ -77,5 +77,15 @@ impl DatabaseProxy {
             .values(&server_info)
             .execute(connection.deref_mut())
             .expect("Failed to insert server info to db");
+    }
+
+    pub async fn save_peer_server_base_info(&self, peer_info: PeerServerBaseInfoRow) {
+        use crate::schema::peer_server_base_info as psbi;
+
+        let mut connection = self.conn.lock().await;
+        diesel::insert_into(psbi::table)
+            .values(&peer_info)
+            .execute(connection.deref_mut())
+            .expect("Failed to insert peer info to db");
     }
 }
