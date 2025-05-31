@@ -9,7 +9,7 @@ pub struct PeerServerBaseInfoRow {
     pub hostname: String,
 }
 
-#[derive(Queryable, Selectable, Insertable, Clone)]
+#[derive(Queryable, Selectable, Insertable, Clone, Debug)]
 #[diesel(table_name = crate::schema::local_server_base_info)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct LocalServerBaseInfoRow {
