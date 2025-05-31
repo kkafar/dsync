@@ -43,10 +43,22 @@ impl ClientApi for ClientApiImpl {
             ));
         };
 
-        let host_descriptions: Vec<HostDescription> = ipv4_addrs
+        let mut serial_responses: Vec<ServerInfo> = Vec::new();
+
+        // This could be definitely improved, however it's fine for now.
+        for addr in ipv4_addrs.iter() {
+            match self.check_hello(&addr.to_string()).await {
+                Some(server_info) => serial_responses.push(server_info),
+                None => {
+                    log::trace!(target: "pslog", "Have not found deamon at {addr}");
+                }
+            }
+        }
+
+        let host_descriptions: Vec<HostDescription> = serial_responses
             .into_iter()
-            .map(|addr| HostDescription {
-                ipv4_addr: addr.to_string(),
+            .map(|sinfo| HostDescription {
+                ipv4_addr: sinfo.address,
             })
             .collect();
 
