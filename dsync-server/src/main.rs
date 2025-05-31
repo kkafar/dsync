@@ -5,7 +5,7 @@ mod schema;
 mod server;
 mod utils;
 
-use std::env;
+use std::{env, path::PathBuf};
 
 use clap::Parser;
 use cli::Args;
@@ -32,13 +32,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
 
-    let env_file_path =
-        configure_env(args.env_file.as_ref()).expect("Failure while environment initialization");
+    let env_file_path_from_env = env::var(server::config::keys::ENV_FILE)
+        .ok()
+        .map(|path_string| PathBuf::from(path_string));
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL env var must be set");
+    let env_file_path_input = args.env_file.as_ref().or(env_file_path_from_env.as_ref());
+
+    let env_file_path =
+        configure_env(env_file_path_input).expect("Failure while environment initialization");
+
+    let database_url = env::var(server::config::keys::DATABASE_URL).expect(&format!(
+        "{} env variable must be set",
+        server::config::keys::DATABASE_URL
+    ));
+
+    let server_port_env = env::var(server::config::keys::SERVER_PORT)
+        .ok()
+        .map(|port_string| port_string.parse::<i32>().unwrap());
 
     let server_instance = server::Server::new(server::config::RunConfiguration {
-        port: 50051,
+        port: args.port.unwrap_or(server_port_env.unwrap_or(50051)),
         database_url: std::path::PathBuf::from(database_url),
         env_file_path,
     });
