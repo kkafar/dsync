@@ -1,0 +1,11 @@
+syntax = "proto3";
+package server;
+
+import "server-defs.proto";
+
+service PeerService {
+    // Service discovery. Peer sends HelloThere message
+    // with its own server info & on successful response
+    // expects peer server info.
+    rpc HelloThere(ServerInfo) returns (ServerInfo);
+}
