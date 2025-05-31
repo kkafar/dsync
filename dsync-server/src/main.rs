@@ -1,15 +1,16 @@
 mod api;
+mod cli;
 mod logging;
-mod utils;
-
 mod models;
 mod schema;
+mod utils;
 
 use std::env;
 use std::process::Command;
 
+use clap::Parser;
+use cli::Args;
 use diesel::{Connection, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
-use dotenvy::dotenv;
 use dsync_proto::client_api::client_api_server::ClientApiServer;
 use models::ThisServerInfoRow;
 use tonic::transport::Server;
@@ -60,15 +61,30 @@ fn get_hostname() -> anyhow::Result<String> {
     return anyhow::Ok(output_string);
 }
 
+fn configure_env(maybe_env_file: Option<impl AsRef<std::path::Path>>) -> anyhow::Result<()> {
+    log::info!("Loading env...");
+    if let Some(env_file) = maybe_env_file {
+        let env_file = env_file.as_ref();
+        let _ = dotenvy::from_path(env_file)?;
+        log::info!("Env loaded from {:?}", env_file);
+    } else {
+        let env_file = dotenvy::dotenv()?;
+        log::info!("Env loaded from {:?}", env_file);
+    }
+
+    anyhow::Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = logging::configure_logging();
-
     log::trace!("dsync_server start");
-    log::info!("Loading env...");
-    dotenv().ok();
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let args = Args::parse();
+
+    configure_env(args.env_file).expect("Failure while environment initialization");
+
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL env var must be set");
 
     let mut connection =
         SqliteConnection::establish(&db_url).expect("Failed to open db connection");
