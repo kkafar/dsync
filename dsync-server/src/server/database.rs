@@ -18,7 +18,7 @@ impl DatabaseProxy {
 }
 
 impl DatabaseProxy {
-    pub async fn fetch_this_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
+    pub async fn fetch_local_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
         use crate::schema::local_server_base_info::dsl::*;
         let mut db_conn = self.conn.lock().await;
 

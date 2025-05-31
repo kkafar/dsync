@@ -18,7 +18,7 @@ impl PeerServiceImpl {
     }
 
     async fn retrieve_this_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
-        anyhow::Ok(self.ctx.db_proxy.fetch_this_server_info().await?)
+        anyhow::Ok(self.ctx.db_proxy.fetch_local_server_info().await?)
     }
 }
 

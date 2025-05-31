@@ -79,7 +79,7 @@ impl ClientApiImpl {
             }
         };
 
-        let server_info = self.ctx.db_proxy.fetch_this_server_info().await.ok()?;
+        let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
             server_info: Some(ServerInfo {
