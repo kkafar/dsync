@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 
-use crate::models::{LocalServerBaseInfoRow, PeerServerBaseInfoRow};
+use crate::models::{LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
 
 pub(crate) struct DatabaseProxy {
     conn: tokio::sync::Mutex<SqliteConnection>,
@@ -79,13 +79,40 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
-    pub async fn save_peer_server_base_info(&self, peer_info: PeerServerBaseInfoRow) {
+    pub async fn save_peer_server_base_info(&self, peer_info: &[PeerServerBaseInfoRow]) {
         use crate::schema::peer_server_base_info as psbi;
 
         let mut connection = self.conn.lock().await;
-        diesel::insert_into(psbi::table)
-            .values(&peer_info)
-            .execute(connection.deref_mut())
-            .expect("Failed to insert peer info to db");
+        let conn_ref_mut = connection.deref_mut();
+
+        // There is a weird bug, similar to https://github.com/diesel-rs/diesel/issues/1930
+        // but for sqlite db, so that I can not add `on_conflict_do_nothing` and execute this
+        // in single call. However, since in sqlite batch insert gets resolved into multiple queries
+        // doing it in loop should be fine (https://diesel.rs/guides/all-about-inserts.html#batch-insert).
+        // diesel::insert_into(psbi::table)
+        //     .values(peer_info)
+        //     .execute(connection.deref_mut())
+        //     .expect("Failed to insert peer info to db");
+        for info in peer_info {
+            diesel::insert_into(psbi::table)
+                .values(info)
+                .on_conflict_do_nothing()
+                .execute(conn_ref_mut)
+                .expect("Failed to insert peer info to db");
+        }
+    }
+
+    pub async fn save_peer_server_addr_info(&self, peer_addr_info: &[PeerAddrV4Row]) {
+        use crate::schema::peer_addr_v4 as pa;
+
+        let mut connection = self.conn.lock().await;
+        let conn_ref_mut = connection.deref_mut();
+        for info in peer_addr_info {
+            diesel::insert_into(pa::table)
+                .values(info)
+                .on_conflict_do_nothing()
+                .execute(conn_ref_mut)
+                .expect("Failed to insert peer addr info to db");
+        }
     }
 }

@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::models::{PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::utils;
 
 use dsync_proto::client_api::client_api_server::ClientApi;
@@ -53,6 +55,47 @@ impl ClientApi for ClientApiImpl {
                     log::trace!(target: "pslog", "Have not found deamon at {addr}");
                 }
             }
+        }
+
+        let discovery_time: i64 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            .try_into()
+            .unwrap();
+
+        // Cache discovered hosts locally
+        {
+            let peer_base_info: Vec<PeerServerBaseInfoRow> = serial_responses
+                .iter()
+                .map(|info| PeerServerBaseInfoRow {
+                    // TODO: Could use only references in this struct, avoiding all the copies
+                    uuid: info.uuid.clone(),
+                    name: info.name.clone(),
+                    hostname: info.hostname.clone(),
+                })
+                .collect();
+
+            self.ctx
+                .db_proxy
+                .save_peer_server_base_info(&peer_base_info)
+                .await;
+        }
+
+        {
+            let peer_addr_info: Vec<PeerAddrV4Row> = serial_responses
+                .iter()
+                .map(|info| PeerAddrV4Row {
+                    uuid: info.uuid.clone(),
+                    ipv4_addr: info.address.clone(),
+                    discovery_time,
+                })
+                .collect();
+
+            self.ctx
+                .db_proxy
+                .save_peer_server_addr_info(&peer_addr_info)
+                .await;
         }
 
         let host_descriptions: Vec<HostDescription> = serial_responses
