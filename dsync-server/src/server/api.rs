@@ -70,9 +70,14 @@ impl ClientApiImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("{ipv4_addr}:50051");
-        let mut client_conn = PeerServiceClient::connect(remote_service_socket.clone())
-            .await
-            .ok()?;
+        let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
+        {
+            Ok(conn) => conn,
+            Err(error) => {
+                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
+                return None;
+            }
+        };
 
         let server_info = self.ctx.db_proxy.fetch_this_server_info().await.ok()?;
 
