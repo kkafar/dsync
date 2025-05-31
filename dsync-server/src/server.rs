@@ -41,13 +41,13 @@ impl Server {
         let addr_str = format!("[::1]:{}", self.run_config.port);
 
         let addr = addr_str.parse()?;
-        let client_api_instance = api::ClientApiImpl::default();
 
         let g_ctx = Arc::new(GlobalContext {
             run_config: self.run_config,
             db_proxy: Arc::new(db_proxy),
         });
 
+        let client_api_instance = api::ClientApiImpl::new(g_ctx.clone());
         let peer_service_instance = peer_service::PeerServiceImpl::new(g_ctx.clone());
 
         log::info!("Starting server at {:?}", addr);
