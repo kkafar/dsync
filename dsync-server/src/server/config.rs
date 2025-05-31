@@ -7,6 +7,7 @@ pub(crate) mod keys {
 }
 
 /// Running configuration for the server.
+#[derive(Debug)]
 pub(crate) struct RunConfiguration {
     /// Port the server should listen on.
     pub port: i32,

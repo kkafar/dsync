@@ -10,7 +10,7 @@ pub struct ServerInfoRow {
     pub address: String,
 }
 
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Queryable, Selectable, Insertable, Clone)]
 #[diesel(table_name = crate::schema::this_server_info)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct ThisServerInfoRow {
