@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::utils;
 
 use dsync_proto::client_api::client_api_server::ClientApi;
@@ -6,8 +8,17 @@ use dsync_proto::p2p::peer_service_client::PeerServiceClient;
 use dsync_proto::p2p::{HelloThereRequest, ServerInfo};
 use tonic::{Request, Response, Status};
 
-#[derive(Debug, Default)]
-pub struct ClientApiImpl {}
+use super::global_context::GlobalContext;
+
+pub struct ClientApiImpl {
+    ctx: Arc<GlobalContext>,
+}
+
+impl ClientApiImpl {
+    pub fn new(ctx: Arc<GlobalContext>) -> Self {
+        Self { ctx }
+    }
+}
 
 #[tonic::async_trait]
 impl ClientApi for ClientApiImpl {
@@ -32,10 +43,22 @@ impl ClientApi for ClientApiImpl {
             ));
         };
 
-        let host_descriptions: Vec<HostDescription> = ipv4_addrs
+        let mut serial_responses: Vec<ServerInfo> = Vec::new();
+
+        // This could be definitely improved, however it's fine for now.
+        for addr in ipv4_addrs.iter() {
+            match self.check_hello(&addr.to_string()).await {
+                Some(server_info) => serial_responses.push(server_info),
+                None => {
+                    log::trace!(target: "pslog", "Have not found deamon at {addr}");
+                }
+            }
+        }
+
+        let host_descriptions: Vec<HostDescription> = serial_responses
             .into_iter()
-            .map(|addr| HostDescription {
-                ipv4_addr: addr.to_string(),
+            .map(|sinfo| HostDescription {
+                ipv4_addr: sinfo.address,
             })
             .collect();
 
@@ -46,15 +69,44 @@ impl ClientApi for ClientApiImpl {
 impl ClientApiImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
         // Try to connect with the host
-        let remote_service_socket = format!("{ipv4_addr}:50051");
-        let client_conn = PeerServiceClient::connect(remote_service_socket)
-            .await
-            .ok()?;
+        let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
+        let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
+        {
+            Ok(conn) => conn,
+            Err(error) => {
+                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
+                return None;
+            }
+        };
 
-        // let request = tonic::Request::new(HelloThereRequest { server_info: Some(ServerInfo { uuid: (), name: (), hostname: (), address: () })})
+        let server_info = self.ctx.db_proxy.fetch_this_server_info().await.ok()?;
 
-        // client_conn.hello_there(request)
+        let request = tonic::Request::new(HelloThereRequest {
+            server_info: Some(ServerInfo {
+                uuid: server_info.uuid,
+                name: server_info.name,
+                hostname: server_info.hostname,
+                address: "".to_owned(),
+            }),
+        });
 
-        None
+        let response = client_conn.hello_there(request).await.ok()?.into_inner();
+
+        if response.server_info.is_none() {
+            log::warn!(target: "pslog", "Invalid response from peer, server info must not be none");
+            return None;
+        }
+
+        let mut remote_server_info = response.server_info.unwrap();
+
+        assert!(
+            remote_server_info.address == "".to_owned(),
+            "Unexpected payload, expected empty address"
+        );
+
+        // Fill up the address, because we actually have this information here
+        remote_server_info.address = remote_service_socket;
+
+        Some(remote_server_info)
     }
 }

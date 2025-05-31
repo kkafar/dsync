@@ -4,7 +4,7 @@ use super::Commands;
 
 impl Commands {
     pub(super) async fn handle_list_hosts(self) -> anyhow::Result<()> {
-        let mut client = ClientApiClient::connect("http://[::1]:50051").await?;
+        let mut client = ClientApiClient::connect("http://127.0.0.1:50051").await?;
 
         let request = tonic::Request::new(ListHostsRequest {});
 
