@@ -12,6 +12,7 @@ use crate::models::ThisServerInfoRow;
 
 pub mod api;
 pub mod config;
+pub mod database;
 pub mod global_context;
 pub mod peer_service;
 
