@@ -2,6 +2,8 @@ use crate::utils;
 
 use dsync_proto::client_api::client_api_server::ClientApi;
 use dsync_proto::client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
+use dsync_proto::p2p::peer_service_client::PeerServiceClient;
+use dsync_proto::p2p::{HelloThereRequest, ServerInfo};
 use tonic::{Request, Response, Status};
 
 #[derive(Debug, Default)]
@@ -38,5 +40,21 @@ impl ClientApi for ClientApiImpl {
             .collect();
 
         return Ok(Response::new(ListHostsResponse { host_descriptions }));
+    }
+}
+
+impl ClientApiImpl {
+    async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
+        // Try to connect with the host
+        let remote_service_socket = format!("{ipv4_addr}:50051");
+        let client_conn = PeerServiceClient::connect(remote_service_socket)
+            .await
+            .ok()?;
+
+        // let request = tonic::Request::new(HelloThereRequest { server_info: Some(ServerInfo { uuid: (), name: (), hostname: (), address: () })})
+
+        // client_conn.hello_there(request)
+
+        None
     }
 }

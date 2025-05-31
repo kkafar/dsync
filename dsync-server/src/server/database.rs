@@ -38,4 +38,40 @@ impl DatabaseProxy {
 
         return anyhow::Ok(server_info);
     }
+
+    pub async fn ensure_db_record_exists(
+        &self,
+        server_info_factory: impl FnOnce() -> ThisServerInfoRow,
+    ) {
+        use crate::schema::this_server_info::dsl::*;
+
+        let mut connection = self.conn.lock().await;
+
+        let results = this_server_info
+            .select(ThisServerInfoRow::as_select())
+            .load(connection.deref_mut())
+            .expect("Error while loading configuration");
+
+        if results.is_empty() {
+            log::info!("Server info table empty - generating server info");
+            let server_info = server_info_factory();
+            self.save_this_server_info(server_info).await;
+        } else if results.len() == 1 {
+            log::trace!("Server info exists");
+        } else {
+            log::error!("Corrupted state of this_server_info! More than single record present!");
+            panic!("Corrupted state of this_server_info! More than single record present!");
+        }
+    }
+
+    pub async fn save_this_server_info(&self, server_info: ThisServerInfoRow) {
+        use crate::schema::this_server_info;
+
+        let mut connection = self.conn.lock().await;
+
+        diesel::insert_into(this_server_info::table)
+            .values(&server_info)
+            .execute(connection.deref_mut())
+            .expect("Failed to insert server info to db");
+    }
 }
