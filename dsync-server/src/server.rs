@@ -28,7 +28,9 @@ impl Server {
 
         self.ensure_db_record_exists(&mut connection);
 
-        let addr = "[::1]:50051".parse()?;
+        let addr_str = format!("[::1]:{}", self.run_config.port);
+
+        let addr = addr_str.parse()?;
         let client_api_instance = api::ClientApiImpl::default();
 
         log::info!("Starting server at {:?}", addr);
