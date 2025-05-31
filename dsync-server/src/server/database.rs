@@ -55,7 +55,7 @@ impl DatabaseProxy {
         if results.is_empty() {
             log::info!("Server info table empty - generating server info");
             let server_info = server_info_factory();
-            self.save_this_server_info(server_info).await;
+            self.save_local_server_info(server_info).await;
         } else if results.len() == 1 {
             log::trace!("Server info exists");
         } else {
@@ -68,7 +68,7 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn save_this_server_info(&self, server_info: LocalServerBaseInfoRow) {
+    pub async fn save_local_server_info(&self, server_info: LocalServerBaseInfoRow) {
         use crate::schema::local_server_base_info;
 
         let mut connection = self.conn.lock().await;
