@@ -23,7 +23,7 @@ pub(crate) fn check_binary_exists(binary_name: &str) -> bool {
     }
 }
 
-pub(crate) fn discover_hosts_in_local_network(require_nmap_pass: bool) -> Option<Vec<Ipv4Addr>> {
+pub(crate) fn discover_hosts_in_local_network() -> Option<Vec<Ipv4Addr>> {
     let nmap_result = std::process::Command::new("nmap")
         .arg("-sP")
         .arg("192.168.100.1/24")

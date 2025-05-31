@@ -5,7 +5,10 @@ use crate::models::{PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::utils;
 
 use dsync_proto::client_api::client_api_server::ClientApi;
-use dsync_proto::client_api::{HostDescription, ListHostsRequest, ListHostsResponse};
+use dsync_proto::client_api::{
+    self, DiscoverHostsRequest, DiscoverHostsResponse, HostDescription, ListHostsRequest,
+    ListHostsResponse,
+};
 use dsync_proto::p2p::peer_service_client::PeerServiceClient;
 use dsync_proto::p2p::{HelloThereRequest, ServerInfo};
 use tonic::{Request, Response, Status};
@@ -30,6 +33,83 @@ impl ClientApi for ClientApiImpl {
     ) -> Result<Response<ListHostsResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
+        let serial_responses = self.host_discovery_impl().await.unwrap();
+
+        let host_descriptions: Vec<HostDescription> = serial_responses
+            .into_iter()
+            .map(|sinfo| HostDescription {
+                ipv4_addr: sinfo.address,
+            })
+            .collect();
+
+        return Ok(Response::new(ListHostsResponse { host_descriptions }));
+    }
+
+    async fn discover_hosts(
+        &self,
+        request: Request<DiscoverHostsRequest>,
+    ) -> Result<Response<DiscoverHostsResponse>, Status> {
+        let serial_responses = self.host_discovery_impl().await.unwrap();
+
+        return Ok(Response::new(DiscoverHostsResponse {
+            server_info: serial_responses
+                .into_iter()
+                .map(|info| client_api::ServerInfo {
+                    uuid: info.uuid,
+                    name: info.name,
+                    hostname: info.hostname,
+                    address: info.address,
+                })
+                .collect(),
+        }));
+    }
+}
+
+impl ClientApiImpl {
+    async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
+        // Try to connect with the host
+        let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
+        let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
+        {
+            Ok(conn) => conn,
+            Err(error) => {
+                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
+                return None;
+            }
+        };
+
+        let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
+
+        let request = tonic::Request::new(HelloThereRequest {
+            server_info: Some(ServerInfo {
+                uuid: server_info.uuid,
+                name: server_info.name,
+                hostname: server_info.hostname,
+                address: "".to_owned(),
+            }),
+        });
+
+        let response = client_conn.hello_there(request).await.ok()?.into_inner();
+
+        if response.server_info.is_none() {
+            log::warn!(target: "pslog", "Invalid response from peer, server info must not be none");
+            return None;
+        }
+
+        let mut remote_server_info = response.server_info.unwrap();
+
+        assert!(
+            remote_server_info.address == "".to_owned(),
+            "Unexpected payload, expected empty address"
+        );
+
+        // Fill up the address, because we actually have this information here
+        remote_server_info.address = remote_service_socket;
+
+        Some(remote_server_info)
+    }
+
+    async fn host_discovery_impl(&self) -> Result<Vec<ServerInfo>, Status> {
         // TODO: this could be done once, on server start.
         if !utils::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
@@ -39,7 +119,7 @@ impl ClientApi for ClientApiImpl {
             return Err(tonic::Status::internal("Missing binary: arp"));
         }
 
-        let Some(ipv4_addrs) = utils::discover_hosts_in_local_network(true) else {
+        let Some(ipv4_addrs) = utils::discover_hosts_in_local_network() else {
             return Err(tonic::Status::internal(
                 "Failed to find hosts in local network",
             ));
@@ -98,58 +178,6 @@ impl ClientApi for ClientApiImpl {
                 .await;
         }
 
-        let host_descriptions: Vec<HostDescription> = serial_responses
-            .into_iter()
-            .map(|sinfo| HostDescription {
-                ipv4_addr: sinfo.address,
-            })
-            .collect();
-
-        return Ok(Response::new(ListHostsResponse { host_descriptions }));
-    }
-}
-
-impl ClientApiImpl {
-    async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
-        // Try to connect with the host
-        let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
-        let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
-        {
-            Ok(conn) => conn,
-            Err(error) => {
-                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
-                return None;
-            }
-        };
-
-        let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
-
-        let request = tonic::Request::new(HelloThereRequest {
-            server_info: Some(ServerInfo {
-                uuid: server_info.uuid,
-                name: server_info.name,
-                hostname: server_info.hostname,
-                address: "".to_owned(),
-            }),
-        });
-
-        let response = client_conn.hello_there(request).await.ok()?.into_inner();
-
-        if response.server_info.is_none() {
-            log::warn!(target: "pslog", "Invalid response from peer, server info must not be none");
-            return None;
-        }
-
-        let mut remote_server_info = response.server_info.unwrap();
-
-        assert!(
-            remote_server_info.address == "".to_owned(),
-            "Unexpected payload, expected empty address"
-        );
-
-        // Fill up the address, because we actually have this information here
-        remote_server_info.address = remote_service_socket;
-
-        Some(remote_server_info)
+        Ok(serial_responses)
     }
 }

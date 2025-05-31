@@ -1,6 +1,8 @@
 syntax = "proto3";
 package cli;
 
+import "cli-defs.proto";
+
 message HostDescription {
     string ipv4_addr = 1;
 }
@@ -13,6 +15,16 @@ message ListHostsResponse {
     repeated HostDescription host_descriptions = 1;
 }
 
+message DiscoverHostsRequest {
+
+}
+
+message DiscoverHostsResponse {
+    repeated ServerInfo server_info = 1;
+}
+
 service ClientApi {
     rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
+
+    rpc DiscoverHosts(DiscoverHostsRequest) returns (DiscoverHostsResponse);
 }
