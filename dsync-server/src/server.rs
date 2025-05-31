@@ -1,14 +1,18 @@
-use std::process::Command;
+use std::{process::Command, sync::Arc};
 
 use config::RunConfiguration;
 use diesel::{Connection, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
-use dsync_proto::client_api::client_api_server::ClientApiServer;
+use dsync_proto::{
+    client_api::client_api_server::ClientApiServer, p2p::peer_service_server::PeerServiceServer,
+};
+use global_context::GlobalContext;
 use uuid::Uuid;
 
 use crate::models::ThisServerInfoRow;
 
 pub mod api;
 pub mod config;
+pub mod global_context;
 pub mod peer_service;
 
 pub(crate) struct Server {
@@ -34,12 +38,18 @@ impl Server {
         let addr = addr_str.parse()?;
         let client_api_instance = api::ClientApiImpl::default();
 
-        // let peer_service_instance api::
+        let g_ctx = Arc::new(GlobalContext {
+            run_config: self.run_config,
+            db_conn: Arc::new(tokio::sync::Mutex::new(connection)),
+        });
+
+        let peer_service_instance = peer_service::PeerServiceImpl::new(g_ctx.clone());
 
         log::info!("Starting server at {:?}", addr);
 
         tonic::transport::Server::builder()
             .add_service(ClientApiServer::new(client_api_instance))
+            .add_service(PeerServiceServer::new(peer_service_instance))
             .serve(addr)
             .await?;
 
