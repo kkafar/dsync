@@ -10,24 +10,19 @@ pub struct ServerInfo {
     #[prost(string, tag = "4")]
     pub address: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HostDescription {
-    #[prost(string, tag = "1")]
-    pub ipv4_addr: ::prost::alloc::string::String,
-}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct ListHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ListHostsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub host_descriptions: ::prost::alloc::vec::Vec<HostDescription>,
+    pub servers_info: ::prost::alloc::vec::Vec<ServerInfo>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct DiscoverHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DiscoverHostsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub server_info: ::prost::alloc::vec::Vec<ServerInfo>,
+    pub servers_info: ::prost::alloc::vec::Vec<ServerInfo>,
 }
 /// Generated client implementations.
 pub mod client_api_client {
