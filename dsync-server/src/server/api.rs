@@ -4,8 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::models::{PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::utils;
 
-use dsync_proto::client_api::client_api_server::ClientApi;
-use dsync_proto::client_api::{
+use dsync_proto::cli::client_api_server::ClientApi;
+use dsync_proto::cli::{
     self, DiscoverHostsRequest, DiscoverHostsResponse, HostDescription, ListHostsRequest,
     ListHostsResponse,
 };
@@ -54,7 +54,7 @@ impl ClientApi for ClientApiImpl {
         return Ok(Response::new(DiscoverHostsResponse {
             server_info: serial_responses
                 .into_iter()
-                .map(|info| client_api::ServerInfo {
+                .map(|info| cli::ServerInfo {
                     uuid: info.uuid,
                     name: info.name,
                     hostname: info.hostname,
