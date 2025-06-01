@@ -49,6 +49,8 @@ impl ClientApi for ClientApiImpl {
         &self,
         _request: Request<DiscoverHostsRequest>,
     ) -> Result<Response<DiscoverHostsResponse>, Status> {
+        log::info!("Received DiscoverHostsRequest");
+
         let serial_responses = self.host_discovery_impl().await.unwrap();
 
         return Ok(Response::new(DiscoverHostsResponse {
