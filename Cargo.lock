@@ -404,12 +404,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "dsync-client"
+name = "dsync_client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "dsync-proto",
+ "dsync_proto",
  "log",
  "log4rs",
  "prost",
@@ -419,7 +419,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dsync-proto"
+name = "dsync_proto"
 version = "0.1.0"
 dependencies = [
  "prost",
@@ -428,14 +428,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "dsync-server"
+name = "dsync_server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
  "diesel",
  "dotenvy",
- "dsync-proto",
+ "dsync_proto",
  "log",
  "log4rs",
  "prost",

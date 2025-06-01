@@ -6,4 +6,4 @@ file = "src/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
-dir = "/Users/kkafara/workspace/private/dsync/dsync-server/migrations"
+dir = "/Users/kkafara/workspace/private/dsync/dsync_server/migrations"
