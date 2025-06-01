@@ -1,7 +1,8 @@
 use std::ops::DerefMut;
 
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
+use dsync_proto::p2p;
 use thiserror::Error;
 
 use models::{LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
@@ -99,6 +100,41 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
+    pub async fn fetch_peer_server_info(&self) -> anyhow::Result<Vec<p2p::ServerInfo>> {
+        use schema::peer_addr_v4 as pa;
+        use schema::peer_server_base_info as psbi;
+
+        let mut connection = self.conn.lock().await;
+
+        let query_result = psbi::table
+            .inner_join(pa::table)
+            .select((
+                PeerServerBaseInfoRow::as_select(),
+                PeerAddrV4Row::as_select(),
+            ))
+            .load::<(PeerServerBaseInfoRow, PeerAddrV4Row)>(connection.deref_mut());
+
+        std::mem::drop(connection);
+
+        match query_result {
+            Ok(data) => {
+                return Ok(data
+                    .into_iter()
+                    .map(|(srv_base_info, srv_addr_info)| p2p::ServerInfo {
+                        uuid: srv_base_info.uuid,
+                        name: srv_base_info.name,
+                        hostname: srv_base_info.hostname,
+                        address: srv_addr_info.ipv4_addr,
+                    })
+                    .collect());
+            }
+            Err(error) => {
+                log::error!("Error while fetching peer server information: {error}");
+                return Err(error.into());
+            }
+        }
+    }
+
     pub async fn save_peer_server_base_info(&self, peer_info: &[PeerServerBaseInfoRow]) {
         use schema::peer_server_base_info as psbi;
 
@@ -148,3 +184,7 @@ pub enum LocalServerBaseInfoError {
     #[error("Other error `{0}`")]
     Other(anyhow::Error),
 }
+
+// pub enum PeerServerInfoFetchError {
+//     NoExistingAddressRecord
+// }

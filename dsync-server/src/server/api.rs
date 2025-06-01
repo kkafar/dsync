@@ -6,11 +6,10 @@ use crate::utils;
 
 use dsync_proto::cli::client_api_server::ClientApi;
 use dsync_proto::cli::{
-    self, DiscoverHostsRequest, DiscoverHostsResponse, HostDescription, ListHostsRequest,
-    ListHostsResponse,
+    self, DiscoverHostsRequest, DiscoverHostsResponse, ListHostsRequest, ListHostsResponse,
 };
 use dsync_proto::p2p::peer_service_client::PeerServiceClient;
-use dsync_proto::p2p::{HelloThereRequest, ServerInfo};
+use dsync_proto::p2p::{self, HelloThereRequest};
 use tonic::{Request, Response, Status};
 
 use super::global_context::GlobalContext;
@@ -33,26 +32,39 @@ impl ClientApi for ClientApiImpl {
     ) -> Result<Response<ListHostsResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
-        let serial_responses = self.host_discovery_impl().await.unwrap();
+        let servers_info = match self.ctx.db_proxy.fetch_peer_server_info().await {
+            Ok(data) => data,
+            Err(err) => {
+                log::error!("Error while fetching peer server info: {err}");
+                return Err(tonic::Status::internal(
+                    "Error while fetching peer server info: {err}",
+                ));
+            }
+        };
 
-        let host_descriptions: Vec<HostDescription> = serial_responses
-            .into_iter()
-            .map(|sinfo| HostDescription {
-                ipv4_addr: sinfo.address,
-            })
-            .collect();
-
-        return Ok(Response::new(ListHostsResponse { host_descriptions }));
+        return Ok(Response::new(ListHostsResponse {
+            servers_info: servers_info
+                .into_iter()
+                .map(|info| cli::ServerInfo {
+                    uuid: info.uuid,
+                    name: info.name,
+                    hostname: info.hostname,
+                    address: info.address,
+                })
+                .collect(),
+        }));
     }
 
     async fn discover_hosts(
         &self,
         _request: Request<DiscoverHostsRequest>,
     ) -> Result<Response<DiscoverHostsResponse>, Status> {
-        let serial_responses = self.host_discovery_impl().await.unwrap();
+        log::info!("Received DiscoverHostsRequest");
+
+        let discovered_servers_info = self.host_discovery_impl().await.unwrap();
 
         return Ok(Response::new(DiscoverHostsResponse {
-            server_info: serial_responses
+            servers_info: discovered_servers_info
                 .into_iter()
                 .map(|info| cli::ServerInfo {
                     uuid: info.uuid,
@@ -66,7 +78,7 @@ impl ClientApi for ClientApiImpl {
 }
 
 impl ClientApiImpl {
-    async fn check_hello(&self, ipv4_addr: &str) -> Option<ServerInfo> {
+    async fn check_hello(&self, ipv4_addr: &str) -> Option<p2p::ServerInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
         let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
@@ -81,7 +93,7 @@ impl ClientApiImpl {
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
-            server_info: Some(ServerInfo {
+            server_info: Some(p2p::ServerInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,
@@ -109,7 +121,7 @@ impl ClientApiImpl {
         Some(remote_server_info)
     }
 
-    async fn host_discovery_impl(&self) -> Result<Vec<ServerInfo>, Status> {
+    async fn host_discovery_impl(&self) -> Result<Vec<p2p::ServerInfo>, Status> {
         // TODO: this could be done once, on server start.
         if !utils::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
@@ -125,7 +137,7 @@ impl ClientApiImpl {
             ));
         };
 
-        let mut serial_responses: Vec<ServerInfo> = Vec::new();
+        let mut serial_responses: Vec<p2p::ServerInfo> = Vec::new();
 
         // This could be definitely improved, however it's fine for now.
         for addr in ipv4_addrs.iter() {

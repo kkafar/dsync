@@ -3,16 +3,12 @@ package cli;
 
 import "cli-defs.proto";
 
-message HostDescription {
-    string ipv4_addr = 1;
-}
-
 message ListHostsRequest {
 
 }
 
 message ListHostsResponse {
-    repeated HostDescription host_descriptions = 1;
+    repeated ServerInfo servers_info = 1;
 }
 
 message DiscoverHostsRequest {
@@ -20,7 +16,7 @@ message DiscoverHostsRequest {
 }
 
 message DiscoverHostsResponse {
-    repeated ServerInfo server_info = 1;
+    repeated ServerInfo servers_info = 1;
 }
 
 service ClientApi {

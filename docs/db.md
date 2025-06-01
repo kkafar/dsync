@@ -10,7 +10,13 @@ No matter whether its local deamon or remote one, the common information is as f
 
 The address is kinda problematic, because it is mutable - the ip addresses even in local network can change.
 
-Therefore, I think that I should put the addresses in separate table.
+~Therefore, I think that I should put the addresses in separate table.~
+
+Yeah, its mutable, however putting it into another table creates burden to uphold invariant in business logic.
+Namely I would need to assure that if the host is present the address is also present.
+It might be easier to just update the big record?
+
+This is something to do in next PRs.
 
 ## peer_addr_v4
 

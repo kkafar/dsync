@@ -34,4 +34,4 @@ jobs:
         uses: arduino/setup-protoc@v3
 
       - name: Build
-        run: cargo build --verbose --bin dsync-client
+        run: cargo build --verbose --bin dsync-cli
