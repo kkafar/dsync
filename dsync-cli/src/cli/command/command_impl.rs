@@ -19,10 +19,17 @@ impl Commands {
 
         let response_payload = response.into_inner();
         response_payload
-            .host_descriptions
+            .servers_info
             .into_iter()
-            .for_each(|desc| {
-                println!("Host at: {}, name: <not-implemented>", desc.ipv4_addr);
+            .enumerate()
+            .for_each(|(i, info)| {
+                println!(
+                    "{} {}@{} ({})",
+                    i + 1,
+                    info.uuid,
+                    info.address,
+                    info.hostname
+                );
             });
 
         anyhow::Ok(())

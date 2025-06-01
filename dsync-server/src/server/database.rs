@@ -2,6 +2,7 @@ use std::ops::DerefMut;
 
 use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
+use dsync_proto::p2p;
 use thiserror::Error;
 
 use models::{LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
@@ -97,6 +98,10 @@ impl DatabaseProxy {
             .values(&server_info)
             .execute(connection.deref_mut())
             .expect("Failed to insert server info to db");
+    }
+
+    pub async fn fetch_peer_server_info(&self) -> anyhow::Result<Vec<p2p::ServerInfo>> {
+        Ok(Vec::new())
     }
 
     pub async fn save_peer_server_base_info(&self, peer_info: &[PeerServerBaseInfoRow]) {
