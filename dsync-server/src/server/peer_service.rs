@@ -3,7 +3,7 @@ use dsync_proto::p2p::{self, HelloThereRequest, HelloThereResponse};
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
-use crate::models::LocalServerBaseInfoRow;
+use super::database::models::LocalServerBaseInfoRow;
 
 use super::global_context::GlobalContext;
 
