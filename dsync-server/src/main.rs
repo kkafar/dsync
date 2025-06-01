@@ -1,7 +1,5 @@
 mod cli;
 mod logging;
-mod models;
-mod schema;
 mod server;
 mod utils;
 

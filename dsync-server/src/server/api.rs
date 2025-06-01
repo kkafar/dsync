@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::models::{PeerAddrV4Row, PeerServerBaseInfoRow};
+use super::database::models::{PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::utils;
 
 use dsync_proto::cli::client_api_server::ClientApi;
@@ -29,7 +29,7 @@ impl ClientApiImpl {
 impl ClientApi for ClientApiImpl {
     async fn list_hosts(
         &self,
-        _: Request<ListHostsRequest>,
+        _request: Request<ListHostsRequest>,
     ) -> Result<Response<ListHostsResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
@@ -47,7 +47,7 @@ impl ClientApi for ClientApiImpl {
 
     async fn discover_hosts(
         &self,
-        request: Request<DiscoverHostsRequest>,
+        _request: Request<DiscoverHostsRequest>,
     ) -> Result<Response<DiscoverHostsResponse>, Status> {
         let serial_responses = self.host_discovery_impl().await.unwrap();
 

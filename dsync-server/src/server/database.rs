@@ -4,7 +4,10 @@ use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 use thiserror::Error;
 
-use crate::models::{LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
+use models::{LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
+
+pub(crate) mod models;
+mod schema;
 
 pub(crate) struct DatabaseProxy {
     conn: tokio::sync::Mutex<SqliteConnection>,
@@ -22,7 +25,7 @@ impl DatabaseProxy {
     pub async fn fetch_local_server_info(
         &self,
     ) -> Result<LocalServerBaseInfoRow, LocalServerBaseInfoError> {
-        use crate::schema::local_server_base_info::dsl::*;
+        use schema::local_server_base_info::dsl::*;
         let mut db_conn = self.conn.lock().await;
 
         let results = local_server_base_info
@@ -84,7 +87,7 @@ impl DatabaseProxy {
     }
 
     pub async fn save_local_server_info(&self, server_info: LocalServerBaseInfoRow) {
-        use crate::schema::local_server_base_info;
+        use schema::local_server_base_info;
 
         log::trace!("Saving local server info");
 
@@ -97,7 +100,7 @@ impl DatabaseProxy {
     }
 
     pub async fn save_peer_server_base_info(&self, peer_info: &[PeerServerBaseInfoRow]) {
-        use crate::schema::peer_server_base_info as psbi;
+        use schema::peer_server_base_info as psbi;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = connection.deref_mut();
@@ -120,7 +123,7 @@ impl DatabaseProxy {
     }
 
     pub async fn save_peer_server_addr_info(&self, peer_addr_info: &[PeerAddrV4Row]) {
-        use crate::schema::peer_addr_v4 as pa;
+        use schema::peer_addr_v4 as pa;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = connection.deref_mut();
