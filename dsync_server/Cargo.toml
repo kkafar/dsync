@@ -1,5 +1,5 @@
 [package]
-name = "dsync-server"
+name = "dsync_server"
 version = "0.1.0"
 edition = "2024"
 
@@ -15,7 +15,7 @@ diesel = { version = "2.2.0", features = [
     "sqlite",
     "returning_clauses_for_sqlite_3_35",
 ] }
-dsync-proto = { path = "../dsync-proto" }
+dsync_proto = { path = "../dsync_proto" }
 dotenvy = "0.15"
 uuid = { version = "1.17.0", features = ["v4"] }
 clap = { version = "4.5.38", features = ["derive"] }
