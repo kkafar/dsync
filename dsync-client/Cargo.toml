@@ -1,5 +1,5 @@
 [package]
-name = "dsync_client"
+name = "dsync-client"
 version = "0.1.0"
 edition = "2024"
 
@@ -12,4 +12,4 @@ anyhow = "1.0.98"
 log4rs = { version = "1.3.0", features = ["console_appender"] }
 log = "0.4.27"
 clap = { version = "4.5.38", features = ["derive"] }
-dsync_proto = { path = "../dsync_proto" }
+dsync-proto = { path = "../dsync-proto" }
