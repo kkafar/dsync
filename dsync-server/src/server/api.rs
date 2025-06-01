@@ -51,10 +51,10 @@ impl ClientApi for ClientApiImpl {
     ) -> Result<Response<DiscoverHostsResponse>, Status> {
         log::info!("Received DiscoverHostsRequest");
 
-        let serial_responses = self.host_discovery_impl().await.unwrap();
+        let discovered_servers_info = self.host_discovery_impl().await.unwrap();
 
         return Ok(Response::new(DiscoverHostsResponse {
-            server_info: serial_responses
+            server_info: discovered_servers_info
                 .into_iter()
                 .map(|info| cli::ServerInfo {
                     uuid: info.uuid,
