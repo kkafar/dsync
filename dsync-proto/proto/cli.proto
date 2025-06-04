@@ -19,8 +19,18 @@ message DiscoverHostsResponse {
     repeated ServerInfo servers_info = 1;
 }
 
+message AddFileRequest {
+    repeated string file_path = 1;
+}
+
+message AddFileResponse {
+
+}
+
 service ClientApi {
     rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
 
     rpc DiscoverHosts(DiscoverHostsRequest) returns (DiscoverHostsResponse);
+
+    rpc AddFile(AddFileRequest) returns (AddFileResponse);
 }

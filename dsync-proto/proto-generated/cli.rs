@@ -24,6 +24,13 @@ pub struct DiscoverHostsResponse {
     #[prost(message, repeated, tag = "1")]
     pub servers_info: ::prost::alloc::vec::Vec<ServerInfo>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddFileRequest {
+    #[prost(string, repeated, tag = "1")]
+    pub file_path: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct AddFileResponse {}
 /// Generated client implementations.
 pub mod client_api_client {
     #![allow(
@@ -160,6 +167,27 @@ pub mod client_api_client {
                 .insert(GrpcMethod::new("cli.ClientApi", "DiscoverHosts"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn add_file(
+            &mut self,
+            request: impl tonic::IntoRequest<super::AddFileRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddFileResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/AddFile");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "AddFile"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -189,6 +217,10 @@ pub mod client_api_server {
             tonic::Response<super::DiscoverHostsResponse>,
             tonic::Status,
         >;
+        async fn add_file(
+            &self,
+            request: tonic::Request<super::AddFileRequest>,
+        ) -> std::result::Result<tonic::Response<super::AddFileResponse>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ClientApiServer<T> {
@@ -341,6 +373,49 @@ pub mod client_api_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DiscoverHostsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/cli.ClientApi/AddFile" => {
+                    #[allow(non_camel_case_types)]
+                    struct AddFileSvc<T: ClientApi>(pub Arc<T>);
+                    impl<T: ClientApi> tonic::server::UnaryService<super::AddFileRequest>
+                    for AddFileSvc<T> {
+                        type Response = super::AddFileResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AddFileRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ClientApi>::add_file(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = AddFileSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
