@@ -16,6 +16,7 @@ pub mod config;
 pub mod database;
 pub mod global_context;
 pub mod peer_service;
+pub(self) mod util;
 
 pub(crate) struct Server {
     run_config: RunConfiguration,
