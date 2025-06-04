@@ -49,16 +49,24 @@ impl ClientApi for ClientApiImpl {
             .first()
             .expect("Single file in array asserted above");
 
-        let file_path = match PathBuf::from(file_path_string).canonicalize() {
-            Ok(absolute_path) => absolute_path,
-            Err(err) => {
-                let message = format!(
-                    "Failed to turn path: {file_path_string} into an absolute path with err: {err}"
-                );
-                log::warn!("{message}");
-                return Err(tonic::Status::invalid_argument(message));
-            }
-        };
+        let file_path = PathBuf::from(file_path_string);
+
+        if !file_path.is_absolute() {
+            return Err(tonic::Status::invalid_argument(
+                "File path must be absolute",
+            ));
+        }
+
+        // let file_path = match PathBuf::from(file_path_string).canonicalize() {
+        //     Ok(absolute_path) => absolute_path,
+        //     Err(err) => {
+        //         let message = format!(
+        //             "Failed to turn path: {file_path_string} into an absolute path with err: {err}"
+        //         );
+        //         log::warn!("{message}");
+        //         return Err(tonic::Status::invalid_argument(message));
+        //     }
+        // };
 
         // 1 - verify that the file exists on the host
         // directories are yet unsupported.

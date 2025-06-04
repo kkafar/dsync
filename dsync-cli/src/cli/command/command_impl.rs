@@ -53,7 +53,18 @@ impl Commands {
     // This captures self by reference to avoid problems with dispatching,
     // since the command itself owns the file_path.
     pub(super) async fn handle_add_file(&self, file_path: PathBuf) -> anyhow::Result<()> {
-        let path_as_string = file_path
+        let file_path_abs = match file_path.canonicalize() {
+            Ok(abs_path) => abs_path,
+            Err(err) => {
+                let message = format!(
+                    "Failed to turn file_path: ${file_path:?} into absolute path with err: {err}"
+                );
+                log::error!("{message}");
+                return Err(anyhow::anyhow!(message));
+            }
+        };
+
+        let path_as_string = file_path_abs
             .to_str()
             .context("Looks like the specified path is not a valid unicode")?
             .to_string();
