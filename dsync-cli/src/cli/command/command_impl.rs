@@ -1,5 +1,9 @@
+use std::path::PathBuf;
+
+use anyhow::Context;
 use dsync_proto::cli::{
-    self, DiscoverHostsRequest, ListHostsRequest, client_api_client::ClientApiClient,
+    self, AddFileRequest, DiscoverHostsRequest, ListHostsRequest,
+    client_api_client::ClientApiClient,
 };
 use prettytable::row;
 
@@ -42,6 +46,43 @@ impl Commands {
 
         let response_payload = response.into_inner();
         print_servers_info(&response_payload.servers_info);
+
+        anyhow::Ok(())
+    }
+
+    // This captures self by reference to avoid problems with dispatching,
+    // since the command itself owns the file_path.
+    pub(super) async fn handle_add_file(&self, file_path: PathBuf) -> anyhow::Result<()> {
+        let file_path_abs = match file_path.canonicalize() {
+            Ok(abs_path) => abs_path,
+            Err(err) => {
+                let message = format!(
+                    "Failed to turn file_path: ${file_path:?} into absolute path with err: {err}"
+                );
+                log::error!("{message}");
+                return Err(anyhow::anyhow!(message));
+            }
+        };
+
+        let path_as_string = file_path_abs
+            .to_str()
+            .context("Looks like the specified path is not a valid unicode")?
+            .to_string();
+
+        let file_paths: Vec<String> = vec![path_as_string];
+        let request = tonic::Request::new(AddFileRequest {
+            file_path: file_paths,
+        });
+
+        let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
+
+        log::info!("Sending request to server");
+        log::debug!("{request:?}");
+
+        let response = client.add_file(request).await?;
+
+        log::info!("Received response from server");
+        log::debug!("{response:?}");
 
         anyhow::Ok(())
     }
