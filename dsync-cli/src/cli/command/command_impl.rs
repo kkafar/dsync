@@ -4,9 +4,11 @@ use dsync_proto::cli::{
 
 use super::Commands;
 
+const LOOPBACK_ADDR_V4: &str = "http://127.0.0.1:50051";
+
 impl Commands {
     pub(super) async fn handle_list_hosts(self) -> anyhow::Result<()> {
-        let mut client = ClientApiClient::connect("http://127.0.0.1:50051").await?;
+        let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
 
         let request = tonic::Request::new(ListHostsRequest {});
 
@@ -22,7 +24,7 @@ impl Commands {
     }
 
     pub(super) async fn handle_discover_hosts(self) -> anyhow::Result<()> {
-        let mut client = ClientApiClient::connect("http://127.0.0.1:50051").await?;
+        let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
 
         let request = tonic::Request::new(DiscoverHostsRequest {});
 
