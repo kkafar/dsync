@@ -6,7 +6,7 @@ use log4rs::{
     encode::pattern::PatternEncoder,
 };
 
-pub(crate) fn configure_logging() -> log4rs::Handle {
+pub(crate) fn configure_logging(log_level: log::LevelFilter) -> log4rs::Handle {
     // https://docs.rs/log4rs/latest/log4rs/encode/pattern/index.html
     let base_encoder = Box::new(PatternEncoder::new(
         "{date} {highlight({level})} {target} - {message}{n}",
@@ -17,7 +17,7 @@ pub(crate) fn configure_logging() -> log4rs::Handle {
 
     let peer_service_logger = Logger::builder()
         .appender(console_appender_name)
-        .build("pslog", LevelFilter::Trace);
+        .build("pslog", log_level);
 
     let logging_config = Config::builder()
         .appender(Appender::builder().build(console_appender_name, Box::new(console_appender)))
@@ -25,10 +25,12 @@ pub(crate) fn configure_logging() -> log4rs::Handle {
         .build(
             Root::builder()
                 .appender(console_appender_name)
-                .build(LevelFilter::Trace),
+                .build(log_level),
         )
         .unwrap();
 
     let handle = log4rs::init_config(logging_config).unwrap();
+
+    log::info!("Logging configured with level: {log_level}");
     return handle;
 }

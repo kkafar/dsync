@@ -24,4 +24,7 @@ pub(crate) struct Args {
         help = "Port number for the server to listen on. This will overwrite SERVER_PORT env variable if set."
     )]
     pub port: Option<i32>,
+
+    #[arg(short = 'l', long, help = "Configure logging level of the client.")]
+    pub log_level: Option<log::LevelFilter>,
 }

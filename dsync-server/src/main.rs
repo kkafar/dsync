@@ -23,10 +23,10 @@ fn load_env(maybe_env_file: Option<&std::path::PathBuf>) -> anyhow::Result<std::
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = logging::configure_logging();
-    log::trace!("dsync_server start");
-
     let args = Args::parse();
+
+    let _ = logging::configure_logging(args.log_level.unwrap_or(log::LevelFilter::Warn));
+    log::info!("dsync_server start");
 
     let env_file_path_from_env = env::var(server::config::keys::ENV_FILE)
         .ok()
