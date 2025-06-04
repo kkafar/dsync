@@ -74,7 +74,9 @@ impl Server {
             .output()
             .expect("Error while running hostname command");
         let output_string = String::from_utf8(hostname_output.stdout)
-            .expect("Failed to convert hostname command output to string");
+            .expect("Failed to convert hostname command output to string")
+            .trim()
+            .to_string();
         return anyhow::Ok(output_string);
     }
 }
