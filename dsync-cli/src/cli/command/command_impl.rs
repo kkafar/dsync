@@ -1,6 +1,7 @@
 use dsync_proto::cli::{
     self, DiscoverHostsRequest, ListHostsRequest, client_api_client::ClientApiClient,
 };
+use prettytable::row;
 
 use super::Commands;
 
@@ -47,17 +48,17 @@ impl Commands {
 }
 
 fn print_servers_info(server_info_coll: &[cli::ServerInfo]) -> () {
+    use prettytable as pt;
+
+    let mut table = pt::Table::new();
+    table.add_row(row!["LID", "NAME", "HOSTNAME", "ADDR"]);
+
     server_info_coll
         .into_iter()
         .enumerate()
         .for_each(|(i, info)| {
-            println!("{} {}", i + 1, format_server_info(&info));
+            table.add_row(row![i, info.name, info.hostname, info.address]);
         });
-}
 
-fn format_server_info(server_info: &cli::ServerInfo) -> String {
-    format!(
-        "{} {} {}",
-        server_info.name, server_info.hostname, server_info.hostname
-    )
+    table.printstd();
 }
