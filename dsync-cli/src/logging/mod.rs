@@ -6,7 +6,9 @@ use log4rs::{
     encode::pattern::PatternEncoder,
 };
 
-pub(crate) fn configure_logging() -> log4rs::Handle {
+use crate::cli::Cli;
+
+pub(crate) fn configure_logging(cli_args: &Cli) -> log4rs::Handle {
     // https://docs.rs/log4rs/latest/log4rs/encode/pattern/index.html
     let base_encoder = Box::new(PatternEncoder::new(
         "{date} {highlight({level})} {target} - {message}{n}",
@@ -20,7 +22,7 @@ pub(crate) fn configure_logging() -> log4rs::Handle {
         .build(
             Root::builder()
                 .appender(console_appender_name)
-                .build(LevelFilter::Trace),
+                .build(cli_args.log_level.unwrap_or(LevelFilter::Warn)),
         )
         .unwrap();
 

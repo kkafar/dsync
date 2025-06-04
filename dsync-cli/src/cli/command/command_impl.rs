@@ -12,10 +12,13 @@ impl Commands {
 
         let request = tonic::Request::new(ListHostsRequest {});
 
+        log::info!("Sending request to server");
+        log::debug!("{request:?}");
+
         let response = client.list_hosts(request).await?;
 
         log::info!("Received response from server");
-        log::debug!("{:?}", response);
+        log::debug!("{response:?}");
 
         let response_payload = response.into_inner();
         print_servers_info(&response_payload.servers_info);
@@ -28,10 +31,13 @@ impl Commands {
 
         let request = tonic::Request::new(DiscoverHostsRequest {});
 
+        log::info!("Sending request to server");
+        log::debug!("{request:?}");
+
         let response = client.discover_hosts(request).await?;
 
         log::info!("Received response from server");
-        log::debug!("{:?}", response);
+        log::debug!("{response:?}");
 
         let response_payload = response.into_inner();
         print_servers_info(&response_payload.servers_info);
