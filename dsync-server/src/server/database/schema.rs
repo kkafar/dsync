@@ -32,6 +32,14 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    synced_files (local_id) {
+        local_id -> Nullable<Integer>,
+        peer_uuid -> Text,
+        remote_file_id -> Integer,
+    }
+}
+
 diesel::joinable!(peer_addr_v4 -> peer_server_base_info (uuid));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -39,4 +47,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     local_server_base_info,
     peer_addr_v4,
     peer_server_base_info,
+    synced_files,
 );
