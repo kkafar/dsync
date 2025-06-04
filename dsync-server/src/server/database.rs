@@ -79,7 +79,7 @@ impl DatabaseProxy {
                     panic!("An error occured while fetching local server data: {err}");
                 }
                 LocalServerBaseInfoError::Uninitialized => {
-                    log::info!("Server info table empty - generating server info");
+                    log::warn!("Server info table empty - generating server info");
                     let server_info = server_info_factory();
                     self.save_local_server_info(server_info).await;
                 }
