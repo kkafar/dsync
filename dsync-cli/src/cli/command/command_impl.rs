@@ -1,5 +1,5 @@
 use dsync_proto::cli::{
-    DiscoverHostsRequest, ListHostsRequest, client_api_client::ClientApiClient,
+    self, DiscoverHostsRequest, ListHostsRequest, client_api_client::ClientApiClient,
 };
 
 use super::Commands;
@@ -16,19 +16,7 @@ impl Commands {
         log::debug!("{:?}", response);
 
         let response_payload = response.into_inner();
-        response_payload
-            .servers_info
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, info)| {
-                println!(
-                    "{} {}@{} ({})",
-                    i + 1,
-                    info.uuid,
-                    info.address,
-                    info.hostname
-                );
-            });
+        print_servers_info(&response_payload.servers_info);
 
         anyhow::Ok(())
     }
@@ -44,20 +32,24 @@ impl Commands {
         log::debug!("{:?}", response);
 
         let response_payload = response.into_inner();
-        response_payload
-            .servers_info
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, info)| {
-                println!(
-                    "{} {}@{} ({})",
-                    i + 1,
-                    info.uuid,
-                    info.address,
-                    info.hostname
-                );
-            });
+        print_servers_info(&response_payload.servers_info);
 
         anyhow::Ok(())
     }
+}
+
+fn print_servers_info(server_info_coll: &[cli::ServerInfo]) -> () {
+    server_info_coll
+        .into_iter()
+        .enumerate()
+        .for_each(|(i, info)| {
+            println!("{} {}", i + 1, format_server_info(&info));
+        });
+}
+
+fn format_server_info(server_info: &cli::ServerInfo) -> String {
+    format!(
+        "{} {} {}",
+        server_info.name, server_info.hostname, server_info.hostname
+    )
 }
