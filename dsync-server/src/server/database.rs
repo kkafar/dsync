@@ -5,7 +5,7 @@ use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 use dsync_proto::p2p;
 use thiserror::Error;
 
-use models::{LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
+use models::{LocalFilesWoIdRow, LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
 
 pub(crate) mod models;
 mod schema;
@@ -170,6 +170,17 @@ impl DatabaseProxy {
                 .execute(conn_ref_mut)
                 .expect("Failed to insert peer addr info to db");
         }
+    }
+
+    pub async fn save_local_file(&self, local_file: LocalFilesWoIdRow) {
+        use schema::local_files as lf;
+
+        let mut connection = self.conn.lock().await;
+        let conn_ref_mut = connection.deref_mut();
+        diesel::insert_into(lf::table)
+            .values(local_file)
+            .execute(conn_ref_mut)
+            .expect("Failed to register local file as tracked");
     }
 }
 

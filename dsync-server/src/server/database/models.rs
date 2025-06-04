@@ -26,3 +26,11 @@ pub struct PeerAddrV4Row {
     pub ipv4_addr: String,
     pub discovery_time: i64,
 }
+
+#[derive(Queryable, Selectable, Insertable, Clone, Debug)]
+#[diesel(table_name = super::schema::local_files)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct LocalFilesWoIdRow {
+    pub file_path: String,
+    pub hash_sha1: String,
+}
