@@ -10,6 +10,15 @@ pub struct ServerInfo {
     #[prost(string, tag = "4")]
     pub address: ::prost::alloc::string::String,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LocalFileDescription {
+    #[prost(string, tag = "1")]
+    pub local_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub file_path: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub hash_sha1: ::prost::alloc::string::String,
+}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct ListHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -31,6 +40,13 @@ pub struct AddFileRequest {
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct AddFileResponse {}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct ListLocalFilesRequest {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListLocalFilesResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub file_descs: ::prost::alloc::vec::Vec<LocalFileDescription>,
+}
 /// Generated client implementations.
 pub mod client_api_client {
     #![allow(
@@ -188,6 +204,30 @@ pub mod client_api_client {
             req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "AddFile"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn list_local_files(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ListLocalFilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListLocalFilesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/cli.ClientApi/ListLocalFiles",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("cli.ClientApi", "ListLocalFiles"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -221,6 +261,13 @@ pub mod client_api_server {
             &self,
             request: tonic::Request<super::AddFileRequest>,
         ) -> std::result::Result<tonic::Response<super::AddFileResponse>, tonic::Status>;
+        async fn list_local_files(
+            &self,
+            request: tonic::Request<super::ListLocalFilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListLocalFilesResponse>,
+            tonic::Status,
+        >;
     }
     #[derive(Debug)]
     pub struct ClientApiServer<T> {
@@ -416,6 +463,51 @@ pub mod client_api_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = AddFileSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/cli.ClientApi/ListLocalFiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct ListLocalFilesSvc<T: ClientApi>(pub Arc<T>);
+                    impl<
+                        T: ClientApi,
+                    > tonic::server::UnaryService<super::ListLocalFilesRequest>
+                    for ListLocalFilesSvc<T> {
+                        type Response = super::ListLocalFilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ListLocalFilesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ClientApi>::list_local_files(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ListLocalFilesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
