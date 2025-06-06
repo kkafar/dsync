@@ -9,7 +9,7 @@ use crate::utils;
 use dsync_proto::cli::client_api_server::ClientApi;
 use dsync_proto::cli::{
     self, AddFileRequest, AddFileResponse, DiscoverHostsRequest, DiscoverHostsResponse,
-    ListHostsRequest, ListHostsResponse,
+    ListHostsRequest, ListHostsResponse, ListLocalFilesRequest, ListLocalFilesResponse,
 };
 use dsync_proto::p2p::peer_service_client::PeerServiceClient;
 use dsync_proto::p2p::{self, HelloThereRequest};
@@ -29,6 +29,34 @@ impl ClientApiImpl {
 
 #[tonic::async_trait]
 impl ClientApi for ClientApiImpl {
+    async fn list_local_files(
+        &self,
+        request: Request<ListLocalFilesRequest>,
+    ) -> Result<Response<ListLocalFilesResponse>, Status> {
+        let request_payload = request.into_inner();
+
+        log::info!("Received ListLocalFilesRequest");
+        log::debug!("Payload: {request_payload:?}");
+
+        match self.ctx.db_proxy.fetch_local_files().await {
+            Ok(local_files) => Ok(tonic::Response::new(ListLocalFilesResponse {
+                file_descs: local_files
+                    .into_iter()
+                    .map(|f| cli::LocalFileDescription {
+                        local_id: f.id.to_string(),
+                        file_path: f.file_path,
+                        hash_sha1: f.hash_sha1,
+                    })
+                    .collect(),
+            })),
+            Err(err) => {
+                let message = format!("Failed to fetch local files with err: {err}");
+                log::warn!("{message}");
+                Err(tonic::Status::internal(message))
+            }
+        }
+    }
+
     async fn add_file(
         &self,
         request: Request<AddFileRequest>,
