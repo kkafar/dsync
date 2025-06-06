@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use dsync_proto::cli::{
-    self, AddFileRequest, DiscoverHostsRequest, ListHostsRequest,
+    self, AddFileRequest, DiscoverHostsRequest, ListHostsRequest, ListLocalFilesRequest,
     client_api_client::ClientApiClient,
 };
 use prettytable::row;
@@ -86,6 +86,25 @@ impl Commands {
 
         anyhow::Ok(())
     }
+
+    pub(super) async fn handle_list_local_files(&self) -> anyhow::Result<()> {
+        let request = tonic::Request::new(ListLocalFilesRequest {});
+        let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
+
+        log::info!("Sending request to server");
+        log::debug!("{request:?}");
+
+        let response = client.list_local_files(request).await?;
+
+        log::info!("Received response from server");
+        log::debug!("{response:?}");
+
+        let payload = response.into_inner();
+
+        print_local_files_desc(&payload.file_descs);
+
+        anyhow::Ok(())
+    }
 }
 
 fn print_servers_info(server_info_coll: &[cli::ServerInfo]) -> () {
@@ -100,6 +119,20 @@ fn print_servers_info(server_info_coll: &[cli::ServerInfo]) -> () {
         .for_each(|(i, info)| {
             table.add_row(row![i, info.name, info.hostname, info.address]);
         });
+
+    table.printstd();
+}
+
+fn print_local_files_desc(file_descs: &[cli::LocalFileDescription]) -> () {
+    use prettytable as pt;
+
+    let mut table = pt::Table::new();
+
+    table.add_row(row!["LID", "PATH", "SHA1[:8]"]);
+
+    file_descs.iter().for_each(|desc| {
+        table.add_row(row![desc.local_id, &desc.file_path, desc.hash_sha1[0..8]]);
+    });
 
     table.printstd();
 }

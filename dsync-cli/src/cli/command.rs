@@ -9,6 +9,7 @@ pub(crate) enum Commands {
     ListHosts,
     DiscoverHosts,
     AddFile { file_path: PathBuf },
+    ListLocalFiles,
 }
 
 impl Commands {
@@ -17,6 +18,7 @@ impl Commands {
             Self::ListHosts => self.handle_list_hosts().await,
             Self::DiscoverHosts => self.handle_discover_hosts().await,
             Self::AddFile { ref file_path } => self.handle_add_file(file_path.clone()).await,
+            Self::ListLocalFiles => self.handle_list_local_files().await,
         }
     }
 }
