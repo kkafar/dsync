@@ -34,3 +34,12 @@ pub struct LocalFilesWoIdRow {
     pub file_path: String,
     pub hash_sha1: String,
 }
+
+#[derive(Queryable, Selectable, Insertable, Clone, Debug)]
+#[diesel(table_name = super::schema::local_files)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct LocalFilesRow {
+    pub id: i32,
+    pub file_path: String,
+    pub hash_sha1: String,
+}

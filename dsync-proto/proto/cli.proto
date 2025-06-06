@@ -27,10 +27,20 @@ message AddFileResponse {
 
 }
 
+message ListLocalFilesRequest {
+
+}
+
+message ListLocalFilesResponse {
+    repeated LocalFileDescription file_descs = 1;
+}
+
 service ClientApi {
     rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
 
     rpc DiscoverHosts(DiscoverHostsRequest) returns (DiscoverHostsResponse);
 
     rpc AddFile(AddFileRequest) returns (AddFileResponse);
+
+    rpc ListLocalFiles(ListLocalFilesRequest) returns (ListLocalFilesResponse);
 }

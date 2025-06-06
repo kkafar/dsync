@@ -9,3 +9,9 @@ message ServerInfo {
     string hostname = 3;
     string address = 4;
 }
+
+message LocalFileDescription {
+    string local_id = 1;
+    string file_path = 2;
+    string hash_sha1 = 3;
+}

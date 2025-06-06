@@ -182,6 +182,20 @@ impl DatabaseProxy {
             .execute(conn_ref_mut)
             .expect("Failed to register local file as tracked");
     }
+
+    pub async fn fetch_local_files(&self) -> anyhow::Result<Vec<models::LocalFilesRow>> {
+        use schema::local_files as lf;
+
+        let mut connection = self.conn.lock().await;
+        let conn_ref_mut = connection.deref_mut();
+
+        let result = lf::table
+            .select(models::LocalFilesRow::as_select())
+            .load(conn_ref_mut)
+            .context("Failed to fetch local files from db")?;
+
+        anyhow::Ok(result)
+    }
 }
 
 #[derive(Error, Debug)]
