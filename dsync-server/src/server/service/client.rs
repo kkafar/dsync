@@ -41,12 +41,6 @@ impl ClientApi for ClientApiImpl {
         log::info!("Received FileAdd");
         log::debug!("Payload: {request_payload:?}");
 
-        if request_payload.file_path.len() != 1 {
-            return Err(tonic::Status::invalid_argument(format!(
-                "Expected exactly 1 file. More / less is not supported right now."
-            )));
-        }
-
         let file_path_string = request_payload.file_path;
         let file_path = PathBuf::from(file_path_string);
 
