@@ -15,3 +15,36 @@ message LocalFileDescription {
     string file_path = 2;
     string hash_sha1 = 3;
 }
+
+
+message ListLocalFilesRequest {
+
+}
+
+message ListLocalFilesResponse {
+    repeated LocalFileDescription file_descs = 1;
+}
+
+message FileAddRequest {
+
+}
+
+message FileAddResponse {
+
+}
+
+message FileRemoveRequest {
+
+}
+
+message FileRemoveResponse {
+
+}
+
+message FileListRequest {
+
+}
+
+message FileListResponse {
+
+}
