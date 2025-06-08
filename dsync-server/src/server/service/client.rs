@@ -8,8 +8,10 @@ use crate::utils;
 
 use dsync_proto::cli::client_api_server::ClientApi;
 use dsync_proto::cli::{
-    self, AddFileRequest, AddFileResponse, DiscoverHostsRequest, DiscoverHostsResponse,
-    ListHostsRequest, ListHostsResponse, ListLocalFilesRequest, ListLocalFilesResponse,
+    FileAddRequest, FileAddResponse, FileListRequest, FileListResponse, FileRemoveRequest,
+    FileRemoveResponse, GroupCreateRequest, GroupCreateResponse, GroupDeleteRequest,
+    GroupDeleteResponse, GroupListRequest, GroupListResponse, HostDiscoverRequest,
+    HostDiscoverResponse, HostListRequest, HostListResponse, LocalFileDescription,
 };
 use dsync_proto::server::HelloThereRequest;
 use dsync_proto::server::peer_service_client::PeerServiceClient;
@@ -30,41 +32,13 @@ impl ClientApiImpl {
 
 #[tonic::async_trait]
 impl ClientApi for ClientApiImpl {
-    async fn list_local_files(
+    async fn file_add(
         &self,
-        request: Request<ListLocalFilesRequest>,
-    ) -> Result<Response<ListLocalFilesResponse>, Status> {
+        request: Request<FileAddRequest>,
+    ) -> Result<Response<FileAddResponse>, Status> {
         let request_payload = request.into_inner();
 
-        log::info!("Received ListLocalFilesRequest");
-        log::debug!("Payload: {request_payload:?}");
-
-        match self.ctx.db_proxy.fetch_local_files().await {
-            Ok(local_files) => Ok(tonic::Response::new(ListLocalFilesResponse {
-                file_descs: local_files
-                    .into_iter()
-                    .map(|f| cli::LocalFileDescription {
-                        local_id: f.id.to_string(),
-                        file_path: f.file_path,
-                        hash_sha1: f.hash_sha1,
-                    })
-                    .collect(),
-            })),
-            Err(err) => {
-                let message = format!("Failed to fetch local files with err: {err}");
-                log::warn!("{message}");
-                Err(tonic::Status::internal(message))
-            }
-        }
-    }
-
-    async fn add_file(
-        &self,
-        request: Request<AddFileRequest>,
-    ) -> Result<Response<AddFileResponse>, Status> {
-        let request_payload = request.into_inner();
-
-        log::info!("Received AddFileRequest");
+        log::info!("Received FileAdd");
         log::debug!("Payload: {request_payload:?}");
 
         if request_payload.file_path.len() != 1 {
@@ -73,11 +47,7 @@ impl ClientApi for ClientApiImpl {
             )));
         }
 
-        let file_path_string = request_payload
-            .file_path
-            .first()
-            .expect("Single file in array asserted above");
-
+        let file_path_string = request_payload.file_path;
         let file_path = PathBuf::from(file_path_string);
 
         if !file_path.is_absolute() {
@@ -85,17 +55,6 @@ impl ClientApi for ClientApiImpl {
                 "File path must be absolute",
             ));
         }
-
-        // let file_path = match PathBuf::from(file_path_string).canonicalize() {
-        //     Ok(absolute_path) => absolute_path,
-        //     Err(err) => {
-        //         let message = format!(
-        //             "Failed to turn path: {file_path_string} into an absolute path with err: {err}"
-        //         );
-        //         log::warn!("{message}");
-        //         return Err(tonic::Status::invalid_argument(message));
-        //     }
-        // };
 
         // 1 - verify that the file exists on the host
         // directories are yet unsupported.
@@ -137,13 +96,48 @@ impl ClientApi for ClientApiImpl {
             })
             .await;
 
-        return Ok(tonic::Response::new(AddFileResponse {}));
+        return Ok(tonic::Response::new(FileAddResponse {}));
     }
 
-    async fn list_hosts(
+    async fn file_remove(
         &self,
-        _request: Request<ListHostsRequest>,
-    ) -> Result<Response<ListHostsResponse>, Status> {
+        request: Request<FileRemoveRequest>,
+    ) -> Result<Response<FileRemoveResponse>, Status> {
+        Err(tonic::Status::unimplemented("Not yet implemented"))
+    }
+
+    async fn file_list(
+        &self,
+        request: Request<FileListRequest>,
+    ) -> Result<Response<FileListResponse>, Status> {
+        let request_payload = request.into_inner();
+
+        log::info!("Received FileList");
+        log::debug!("Payload: {request_payload:?}");
+
+        match self.ctx.db_proxy.fetch_local_files().await {
+            Ok(local_files) => Ok(tonic::Response::new(FileListResponse {
+                file_list: local_files
+                    .into_iter()
+                    .map(|f| LocalFileDescription {
+                        local_id: f.id.to_string(),
+                        file_path: f.file_path,
+                        hash_sha1: f.hash_sha1,
+                    })
+                    .collect(),
+            })),
+            Err(err) => {
+                let message = format!("Failed to fetch local files with err: {err}");
+                log::warn!("{message}");
+                Err(tonic::Status::internal(message))
+            }
+        }
+    }
+
+    async fn host_list(
+        &self,
+        request: Request<HostListRequest>,
+    ) -> Result<Response<HostListResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
         let servers_info = match self.ctx.db_proxy.fetch_peer_server_info().await {
@@ -156,20 +150,43 @@ impl ClientApi for ClientApiImpl {
             }
         };
 
-        return Ok(Response::new(ListHostsResponse { servers_info }));
+        return Ok(Response::new(HostListResponse {
+            host_list: servers_info,
+        }));
     }
 
-    async fn discover_hosts(
+    async fn host_discover(
         &self,
-        _request: Request<DiscoverHostsRequest>,
-    ) -> Result<Response<DiscoverHostsResponse>, Status> {
+        request: Request<HostDiscoverRequest>,
+    ) -> Result<Response<HostDiscoverResponse>, Status> {
         log::info!("Received DiscoverHostsRequest");
 
         let discovered_servers_info = self.host_discovery_impl().await.unwrap();
 
-        return Ok(Response::new(DiscoverHostsResponse {
-            servers_info: discovered_servers_info,
+        return Ok(Response::new(HostDiscoverResponse {
+            host_list: discovered_servers_info,
         }));
+    }
+
+    async fn group_create(
+        &self,
+        request: Request<GroupCreateRequest>,
+    ) -> Result<Response<GroupCreateResponse>, Status> {
+        Err(tonic::Status::unimplemented("Not yet implemented"))
+    }
+
+    async fn group_delete(
+        &self,
+        request: Request<GroupDeleteRequest>,
+    ) -> Result<Response<GroupDeleteResponse>, Status> {
+        Err(tonic::Status::unimplemented("Not yet implemented"))
+    }
+
+    async fn group_list(
+        &self,
+        request: Request<GroupListRequest>,
+    ) -> Result<Response<GroupListResponse>, Status> {
+        Err(tonic::Status::unimplemented("Not yet implemented"))
     }
 }
 
