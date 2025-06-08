@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 
 use anyhow::Context;
-use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 use dsync_proto::shared;
 use thiserror::Error;
 
@@ -193,6 +193,19 @@ impl DatabaseProxy {
             .select(models::LocalFilesRow::as_select())
             .load(conn_ref_mut)
             .context("Failed to fetch local files from db")?;
+
+        anyhow::Ok(result)
+    }
+
+    pub async fn delete_local_file(&self, file_path: &str) -> anyhow::Result<usize> {
+        use schema::local_files as lf;
+
+        let mut connection = self.conn.lock().await;
+        let conn_ref_mut = &mut *connection;
+
+        let result = diesel::delete(lf::table)
+            .filter(lf::dsl::file_path.eq(file_path))
+            .execute(conn_ref_mut)?;
 
         anyhow::Ok(result)
     }

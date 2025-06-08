@@ -97,7 +97,27 @@ impl ClientApi for ClientApiImpl {
         &self,
         request: Request<FileRemoveRequest>,
     ) -> Result<Response<FileRemoveResponse>, Status> {
-        Err(tonic::Status::unimplemented("Not yet implemented"))
+        let payload = request.into_inner();
+
+        if payload.group_id.is_some() {
+            return Err(tonic::Status::unimplemented(
+                "Removing files from groups is not yet supported",
+            ));
+        }
+
+        match self
+            .ctx
+            .db_proxy
+            .delete_local_file(&payload.file_path)
+            .await
+        {
+            Ok(_) => Ok(Response::new(FileRemoveResponse {})),
+            Err(err) => {
+                let message = format!("Error while attampting to remove a file: {err}");
+                log::warn!("{message}");
+                Err(tonic::Status::internal(message))
+            }
+        }
     }
 
     async fn file_list(
