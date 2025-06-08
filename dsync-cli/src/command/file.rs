@@ -2,7 +2,9 @@ use std::path::Path;
 
 use crate::command::utils;
 use anyhow::Context;
-use dsync_proto::cli::{FileAddRequest, FileListRequest, client_api_client::ClientApiClient};
+use dsync_proto::cli::{
+    FileAddRequest, FileListRequest, FileRemoveRequest, client_api_client::ClientApiClient,
+};
 
 use crate::command::model::LOOPBACK_ADDR_V4;
 
@@ -44,8 +46,41 @@ pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> 
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_remove() -> anyhow::Result<()> {
-    todo!()
+pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<()> {
+    let file_path = file_path.as_ref();
+
+    let file_path_abs = match file_path.canonicalize() {
+        Ok(abs_path) => abs_path,
+        Err(err) => {
+            let message = format!(
+                "Failed to turn file_path: ${file_path:?} into absolute path with err: {err}"
+            );
+            log::error!("{message}");
+            return Err(anyhow::anyhow!(message));
+        }
+    };
+
+    let path_as_string = file_path_abs
+        .to_str()
+        .context("Looks like the specified path is not a valid unicode")?
+        .to_string();
+
+    let request = tonic::Request::new(FileRemoveRequest {
+        file_path: path_as_string,
+        group_id: None,
+    });
+
+    let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
+
+    log::info!("Sending request to server");
+    log::debug!("{request:?}");
+
+    let response = client.file_remove(request).await?;
+
+    log::info!("Received response from server");
+    log::debug!("{response:?}");
+
+    anyhow::Ok(())
 }
 
 pub(crate) async fn file_list(

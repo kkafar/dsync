@@ -30,7 +30,9 @@ impl Commands {
             },
             Self::File(subcmd) => match subcmd {
                 file::FileCommand::Add { path, group_id } => command::file::file_add(path).await,
-                file::FileCommand::Remove { path, group_id } => command::file::file_remove().await,
+                file::FileCommand::Remove { path, group_id } => {
+                    command::file::file_remove(&path).await
+                }
                 file::FileCommand::List {
                     remote_id,
                     group_id,
