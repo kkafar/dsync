@@ -4,7 +4,7 @@ use config::RunConfiguration;
 use database::DatabaseProxy;
 use diesel::{Connection, SqliteConnection};
 use dsync_proto::{
-    cli::client_api_server::ClientApiServer, p2p::peer_service_server::PeerServiceServer,
+    cli::client_api_server::ClientApiServer, server::peer_service_server::PeerServiceServer,
 };
 use global_context::GlobalContext;
 use uuid::Uuid;
