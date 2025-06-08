@@ -7,7 +7,7 @@ use dsync_proto::cli::{
 };
 use prettytable::row;
 
-use super::Commands;
+use super::model::Commands;
 
 const LOOPBACK_ADDR_V4: &str = "http://127.0.0.1:50051";
 
