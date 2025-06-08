@@ -31,9 +31,9 @@ message AddFileResponse {
 service ClientApi {
     // File related methods
 
-    // rpc FileAdd(FileAddRequest) returns (FileAddResponse);
+    rpc FileAdd(FileAddRequest) returns (FileAddResponse);
     // rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
-    // rpc FileList(FileListRequest) returns (FileListResponse);
+    rpc FileList(FileListRequest) returns (FileListResponse);
 
     // Host related methods
 

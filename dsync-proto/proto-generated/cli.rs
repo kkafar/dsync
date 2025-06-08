@@ -15,18 +15,36 @@ pub struct ListLocalFilesResponse {
     #[prost(message, repeated, tag = "1")]
     pub file_descs: ::prost::alloc::vec::Vec<LocalFileDescription>,
 }
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct FileAddRequest {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FileAddRequest {
+    #[prost(string, tag = "1")]
+    pub file_path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub group_id: ::core::option::Option<::prost::alloc::string::String>,
+}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct FileAddResponse {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct FileRemoveRequest {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FileRemoveRequest {
+    #[prost(string, tag = "1")]
+    pub file_path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub group_id: ::core::option::Option<::prost::alloc::string::String>,
+}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct FileRemoveResponse {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct FileListRequest {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct FileListResponse {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FileListRequest {
+    #[prost(string, optional, tag = "1")]
+    pub remote_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "2")]
+    pub group_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FileListResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub file_list: ::prost::alloc::vec::Vec<LocalFileDescription>,
+}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct ListHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -139,6 +157,49 @@ pub mod client_api_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
+        pub async fn file_add(
+            &mut self,
+            request: impl tonic::IntoRequest<super::FileAddRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::FileAddResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/FileAdd");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "FileAdd"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
+        pub async fn file_list(
+            &mut self,
+            request: impl tonic::IntoRequest<super::FileListRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::FileListResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/FileList");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "FileList"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn add_file(
             &mut self,
             request: impl tonic::IntoRequest<super::AddFileRequest>,
@@ -244,6 +305,18 @@ pub mod client_api_server {
     /// Generated trait containing gRPC methods that should be implemented for use with ClientApiServer.
     #[async_trait]
     pub trait ClientApi: std::marker::Send + std::marker::Sync + 'static {
+        async fn file_add(
+            &self,
+            request: tonic::Request<super::FileAddRequest>,
+        ) -> std::result::Result<tonic::Response<super::FileAddResponse>, tonic::Status>;
+        /// rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
+        async fn file_list(
+            &self,
+            request: tonic::Request<super::FileListRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::FileListResponse>,
+            tonic::Status,
+        >;
         async fn add_file(
             &self,
             request: tonic::Request<super::AddFileRequest>,
@@ -346,6 +419,94 @@ pub mod client_api_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
+                "/cli.ClientApi/FileAdd" => {
+                    #[allow(non_camel_case_types)]
+                    struct FileAddSvc<T: ClientApi>(pub Arc<T>);
+                    impl<T: ClientApi> tonic::server::UnaryService<super::FileAddRequest>
+                    for FileAddSvc<T> {
+                        type Response = super::FileAddResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FileAddRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ClientApi>::file_add(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = FileAddSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/cli.ClientApi/FileList" => {
+                    #[allow(non_camel_case_types)]
+                    struct FileListSvc<T: ClientApi>(pub Arc<T>);
+                    impl<
+                        T: ClientApi,
+                    > tonic::server::UnaryService<super::FileListRequest>
+                    for FileListSvc<T> {
+                        type Response = super::FileListResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FileListRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ClientApi>::file_list(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = FileListSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/cli.ClientApi/AddFile" => {
                     #[allow(non_camel_case_types)]
                     struct AddFileSvc<T: ClientApi>(pub Arc<T>);
