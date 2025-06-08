@@ -2,7 +2,7 @@ mod file;
 mod group;
 mod host;
 
-use std::path::PathBuf;
+use crate::command;
 
 use clap::Subcommand;
 
@@ -19,25 +19,32 @@ pub(crate) enum Commands {
     /// Manage & display file groups.
     #[command(subcommand)]
     Group(group::GroupCommand),
-
-    ListHosts,
-
-    AddFile {
-        file_path: PathBuf,
-    },
-    ListLocalFiles,
-    DiscoverHosts,
 }
 
 impl Commands {
     pub(crate) async fn handle(self) -> anyhow::Result<()> {
         match self {
-            Self::ListHosts => self.handle_list_hosts().await,
-            Self::DiscoverHosts => self.handle_discover_hosts().await,
-            Self::AddFile { ref file_path } => self.handle_add_file(file_path.clone()).await,
-            Self::ListLocalFiles => self.handle_list_local_files().await,
+            Self::Host(subcmd) => match subcmd {
+                host::HostCommand::List { discover } => command::handle_list_hosts().await,
+                host::HostCommand::Discover => command::handle_discover_hosts().await,
+            },
+            Self::File(subcmd) => match subcmd {
+                file::FileCommand::Add { path, group_id } => command::handle_add_file(path).await,
+                file::FileCommand::Remove { path, group_id } => todo!(),
+                file::FileCommand::List {
+                    remote_id,
+                    group_id,
+                } => command::handle_list_local_files().await,
+                file::FileCommand::Sync => todo!(),
+                file::FileCommand::Unsync => todo!(),
+            },
+            Self::Group(subcmd) => match subcmd {
+                group::GroupCommand::Create { group_id } => todo!(),
+                group::GroupCommand::Delete { group_id } => todo!(),
+                group::GroupCommand::List { remote_id } => todo!(),
+            },
             _ => {
-                log::warn!("Unimplemented command!");
+                log::error!("Unimplemented command!");
                 Err(anyhow::anyhow!("Unimplemented command"))
             }
         }
