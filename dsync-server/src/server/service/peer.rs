@@ -3,9 +3,8 @@ use dsync_proto::p2p::{self, HelloThereRequest, HelloThereResponse};
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
-use super::database::models::LocalServerBaseInfoRow;
-
-use super::global_context::GlobalContext;
+use crate::server::database::models::LocalServerBaseInfoRow;
+use crate::server::global_context::GlobalContext;
 
 // #[derive(Debug)]
 pub struct PeerServiceImpl {

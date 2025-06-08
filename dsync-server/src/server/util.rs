@@ -1,7 +1,4 @@
-use std::{
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::{io::Read, path::Path};
 
 pub(super) fn compute_sha1_hash_from_file(
     file_path: impl AsRef<Path>,

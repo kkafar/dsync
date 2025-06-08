@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServerBaseInfoRow};
-use super::util;
+use crate::server::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServerBaseInfoRow};
+use crate::server::util;
 use crate::utils;
 
 use dsync_proto::cli::client_api_server::ClientApi;
@@ -15,7 +15,7 @@ use dsync_proto::p2p::peer_service_client::PeerServiceClient;
 use dsync_proto::p2p::{self, HelloThereRequest};
 use tonic::{Request, Response, Status};
 
-use super::global_context::GlobalContext;
+use crate::server::global_context::GlobalContext;
 
 pub struct ClientApiImpl {
     ctx: Arc<GlobalContext>,
