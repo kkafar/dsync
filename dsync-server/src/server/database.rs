@@ -2,7 +2,7 @@ use std::ops::DerefMut;
 
 use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
-use dsync_proto::server;
+use dsync_proto::shared;
 use thiserror::Error;
 
 use models::{LocalFilesWoIdRow, LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
@@ -100,7 +100,7 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
-    pub async fn fetch_peer_server_info(&self) -> anyhow::Result<Vec<server::ServerInfo>> {
+    pub async fn fetch_peer_server_info(&self) -> anyhow::Result<Vec<shared::ServerInfo>> {
         use schema::peer_addr_v4 as pa;
         use schema::peer_server_base_info as psbi;
 
@@ -120,7 +120,7 @@ impl DatabaseProxy {
             Ok(data) => {
                 return Ok(data
                     .into_iter()
-                    .map(|(srv_base_info, srv_addr_info)| server::ServerInfo {
+                    .map(|(srv_base_info, srv_addr_info)| shared::ServerInfo {
                         uuid: srv_base_info.uuid,
                         name: srv_base_info.name,
                         hostname: srv_base_info.hostname,

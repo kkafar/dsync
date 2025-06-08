@@ -1,5 +1,6 @@
 use dsync_proto::server::peer_service_server::PeerService;
-use dsync_proto::server::{self, HelloThereRequest, HelloThereResponse};
+use dsync_proto::server::{HelloThereRequest, HelloThereResponse};
+use dsync_proto::shared;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
@@ -47,7 +48,7 @@ impl PeerService for PeerServiceImpl {
         };
 
         Ok(Response::new(HelloThereResponse {
-            server_info: Some(server::ServerInfo {
+            server_info: Some(shared::ServerInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,

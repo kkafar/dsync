@@ -11,8 +11,9 @@ use dsync_proto::cli::{
     self, AddFileRequest, AddFileResponse, DiscoverHostsRequest, DiscoverHostsResponse,
     ListHostsRequest, ListHostsResponse, ListLocalFilesRequest, ListLocalFilesResponse,
 };
+use dsync_proto::server::HelloThereRequest;
 use dsync_proto::server::peer_service_client::PeerServiceClient;
-use dsync_proto::server::{self, HelloThereRequest};
+use dsync_proto::shared;
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
@@ -173,7 +174,7 @@ impl ClientApi for ClientApiImpl {
 }
 
 impl ClientApiImpl {
-    async fn check_hello(&self, ipv4_addr: &str) -> Option<server::ServerInfo> {
+    async fn check_hello(&self, ipv4_addr: &str) -> Option<shared::ServerInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
         let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
@@ -188,7 +189,7 @@ impl ClientApiImpl {
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
-            server_info: Some(server::ServerInfo {
+            server_info: Some(shared::ServerInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,
@@ -216,7 +217,7 @@ impl ClientApiImpl {
         Some(remote_server_info)
     }
 
-    async fn host_discovery_impl(&self) -> Result<Vec<server::ServerInfo>, Status> {
+    async fn host_discovery_impl(&self) -> Result<Vec<shared::ServerInfo>, Status> {
         // TODO: this could be done once, on server start.
         if !utils::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
@@ -232,7 +233,7 @@ impl ClientApiImpl {
             ));
         };
 
-        let mut serial_responses: Vec<server::ServerInfo> = Vec::new();
+        let mut serial_responses: Vec<shared::ServerInfo> = Vec::new();
 
         // This could be definitely improved, however it's fine for now.
         for addr in ipv4_addrs.iter() {
