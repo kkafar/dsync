@@ -1,6 +1,7 @@
-mod file;
-mod group;
-mod host;
+pub(crate) mod file;
+pub(crate) mod group;
+pub(crate) mod host;
+pub(crate) mod model;
 
 use std::path::PathBuf;
 
@@ -11,7 +12,7 @@ use dsync_proto::cli::{
 };
 use prettytable::row;
 
-use super::model::Commands;
+use crate::cli::command::Commands;
 
 const LOOPBACK_ADDR_V4: &str = "http://127.0.0.1:50051";
 

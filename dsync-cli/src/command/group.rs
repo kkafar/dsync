@@ -1,4 +1,4 @@
-use crate::cli::command::model::{GroupId, RemoteId};
+use super::model::{GroupId, RemoteId};
 
 pub(crate) async fn group_create(_group_id: GroupId) -> anyhow::Result<()> {
     unimplemented!()

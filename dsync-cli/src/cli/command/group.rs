@@ -1,6 +1,6 @@
 use clap::Subcommand;
 
-use super::{GroupId, RemoteId};
+use crate::command::model::{GroupId, RemoteId};
 
 #[derive(Subcommand)]
 pub(crate) enum GroupCommand {

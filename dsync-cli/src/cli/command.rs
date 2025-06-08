@@ -1,7 +1,35 @@
-mod cmdimpl;
-pub(crate) mod model;
+mod file;
+mod group;
+mod host;
 
-impl model::Commands {
+use std::path::PathBuf;
+
+use clap::Subcommand;
+
+#[derive(Subcommand)]
+pub(crate) enum Commands {
+    /// Manage local & remote hosts (peers)
+    #[command(subcommand)]
+    Host(host::HostCommand),
+
+    /// Operations on files
+    #[command(subcommand)]
+    File(file::FileCommand),
+
+    /// Manage & display file groups.
+    #[command(subcommand)]
+    Group(group::GroupCommand),
+
+    ListHosts,
+
+    AddFile {
+        file_path: PathBuf,
+    },
+    ListLocalFiles,
+    DiscoverHosts,
+}
+
+impl Commands {
     pub(crate) async fn handle(self) -> anyhow::Result<()> {
         match self {
             Self::ListHosts => self.handle_list_hosts().await,

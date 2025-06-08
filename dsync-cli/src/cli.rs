@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use command::model::Commands;
+use command::Commands;
 
 pub(crate) mod command;
 
