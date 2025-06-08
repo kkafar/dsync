@@ -11,11 +11,11 @@ use uuid::Uuid;
 
 use database::models::LocalServerBaseInfoRow;
 
-pub mod api;
 pub mod config;
 pub mod database;
 pub mod global_context;
-pub mod peer_service;
+pub(crate) mod service;
+
 pub(self) mod util;
 
 pub(crate) struct Server {
@@ -48,8 +48,8 @@ impl Server {
             db_proxy: Arc::new(db_proxy),
         });
 
-        let client_api_instance = api::ClientApiImpl::new(g_ctx.clone());
-        let peer_service_instance = peer_service::PeerServiceImpl::new(g_ctx.clone());
+        let client_api_instance = service::client::ClientApiImpl::new(g_ctx.clone());
+        let peer_service_instance = service::peer::PeerServiceImpl::new(g_ctx.clone());
 
         log::info!("Starting server at {:?}", addr);
 
