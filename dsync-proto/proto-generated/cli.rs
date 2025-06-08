@@ -32,14 +32,14 @@ pub struct ListHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ListHostsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub servers_info: ::prost::alloc::vec::Vec<super::server::ServerInfo>,
+    pub servers_info: ::prost::alloc::vec::Vec<super::shared::ServerInfo>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct DiscoverHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DiscoverHostsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub servers_info: ::prost::alloc::vec::Vec<super::server::ServerInfo>,
+    pub servers_info: ::prost::alloc::vec::Vec<super::shared::ServerInfo>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AddFileRequest {

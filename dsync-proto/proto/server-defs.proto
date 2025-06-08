@@ -1,9 +1,12 @@
 syntax = "proto3";
 package server;
 
-message ServerInfo {
-    string uuid = 1;
-    string name = 2;
-    string hostname = 3;
-    string address = 4;
+import "shared-defs.proto";
+
+message HelloThereRequest {
+    shared.ServerInfo server_info = 1;
+}
+
+message HelloThereResponse {
+    shared.ServerInfo server_info = 1;
 }

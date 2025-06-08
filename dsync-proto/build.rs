@@ -7,11 +7,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client_api_proto_path = proto_root_dir.join("cli.proto");
     let server_api_proto_path = proto_root_dir.join("server.proto");
+    let shared_defs_proto_path = proto_root_dir.join("shared-defs.proto");
 
     tonic_build::configure()
         .out_dir("proto-generated/")
         .compile_protos(
-            &[&client_api_proto_path, &server_api_proto_path],
+            &[
+                &client_api_proto_path,
+                &server_api_proto_path,
+                &shared_defs_proto_path,
+            ],
             &[proto_root_dir],
         )?;
     Ok(())

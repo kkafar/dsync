@@ -3,14 +3,6 @@ package server;
 
 import "server-defs.proto";
 
-message HelloThereRequest {
-    ServerInfo server_info = 1;
-}
-
-message HelloThereResponse {
-    ServerInfo server_info = 2;
-}
-
 service PeerService {
     // Service discovery. Peer sends HelloThere message
     // with its own server info & on successful response

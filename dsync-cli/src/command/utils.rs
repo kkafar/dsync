@@ -1,7 +1,7 @@
-use dsync_proto::{cli, server};
+use dsync_proto::{cli, shared};
 use prettytable::row;
 
-pub(super) fn print_servers_info(server_info_coll: &[server::ServerInfo]) -> () {
+pub(super) fn print_servers_info(server_info_coll: &[shared::ServerInfo]) -> () {
     use prettytable as pt;
 
     let mut table = pt::Table::new();
