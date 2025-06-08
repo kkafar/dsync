@@ -4,45 +4,33 @@ package cli;
 import "cli-defs.proto";
 import "shared-defs.proto";
 
-message ListHostsRequest {
+message ListHostsRequest {}
 
-}
+message ListHostsResponse { repeated shared.ServerInfo servers_info = 1; }
 
-message ListHostsResponse {
-    repeated shared.ServerInfo servers_info = 1;
-}
+message DiscoverHostsRequest {}
 
-message DiscoverHostsRequest {
+message DiscoverHostsResponse { repeated shared.ServerInfo servers_info = 1; }
 
-}
+message AddFileRequest { repeated string file_path = 1; }
 
-message DiscoverHostsResponse {
-    repeated shared.ServerInfo servers_info = 1;
-}
-
-message AddFileRequest {
-    repeated string file_path = 1;
-}
-
-message AddFileResponse {
-
-}
+message AddFileResponse {}
 
 service ClientApi {
-    // File related methods
+  // File related methods
 
-    rpc FileAdd(FileAddRequest) returns (FileAddResponse);
-    rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
-    rpc FileList(FileListRequest) returns (FileListResponse);
+  rpc FileAdd(FileAddRequest) returns (FileAddResponse);
+  rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
+  rpc FileList(FileListRequest) returns (FileListResponse);
 
-    // Host related methods
+  // Host related methods
 
-    rpc HostList(HostListRequest) returns (HostListResponse);
-    rpc HostDiscover(HostDiscoverRequest) returns (HostDiscoverResponse);
+  rpc HostList(HostListRequest) returns (HostListResponse);
+  rpc HostDiscover(HostDiscoverRequest) returns (HostDiscoverResponse);
 
-    // Group management
+  // Group management
 
-    rpc GroupCreate(GroupCreateRequest) returns (GroupCreateResponse);
-    rpc GroupDelete(GroupDeleteRequest) returns (GroupDeleteResponse);
-    rpc GroupList(GroupListRequest) returns (GroupListResponse);
+  rpc GroupCreate(GroupCreateRequest) returns (GroupCreateResponse);
+  rpc GroupDelete(GroupDeleteRequest) returns (GroupDeleteResponse);
+  rpc GroupList(GroupListRequest) returns (GroupListResponse);
 }
