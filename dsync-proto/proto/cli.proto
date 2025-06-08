@@ -2,13 +2,14 @@ syntax = "proto3";
 package cli;
 
 import "cli-defs.proto";
+import "server-defs.proto";
 
 message ListHostsRequest {
 
 }
 
 message ListHostsResponse {
-    repeated ServerInfo servers_info = 1;
+    repeated server.ServerInfo servers_info = 1;
 }
 
 message DiscoverHostsRequest {
@@ -16,7 +17,7 @@ message DiscoverHostsRequest {
 }
 
 message DiscoverHostsResponse {
-    repeated ServerInfo servers_info = 1;
+    repeated server.ServerInfo servers_info = 1;
 }
 
 message AddFileRequest {

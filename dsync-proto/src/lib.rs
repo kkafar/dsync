@@ -5,6 +5,6 @@ pub mod cli {
     include!("../proto-generated/cli.rs");
 }
 
-pub mod p2p {
+pub mod server {
     include!("../proto-generated/server.rs");
 }

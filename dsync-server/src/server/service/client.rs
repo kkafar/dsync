@@ -11,8 +11,8 @@ use dsync_proto::cli::{
     self, AddFileRequest, AddFileResponse, DiscoverHostsRequest, DiscoverHostsResponse,
     ListHostsRequest, ListHostsResponse, ListLocalFilesRequest, ListLocalFilesResponse,
 };
-use dsync_proto::p2p::peer_service_client::PeerServiceClient;
-use dsync_proto::p2p::{self, HelloThereRequest};
+use dsync_proto::server::peer_service_client::PeerServiceClient;
+use dsync_proto::server::{self, HelloThereRequest};
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
@@ -155,17 +155,7 @@ impl ClientApi for ClientApiImpl {
             }
         };
 
-        return Ok(Response::new(ListHostsResponse {
-            servers_info: servers_info
-                .into_iter()
-                .map(|info| cli::ServerInfo {
-                    uuid: info.uuid,
-                    name: info.name,
-                    hostname: info.hostname,
-                    address: info.address,
-                })
-                .collect(),
-        }));
+        return Ok(Response::new(ListHostsResponse { servers_info }));
     }
 
     async fn discover_hosts(
@@ -177,21 +167,13 @@ impl ClientApi for ClientApiImpl {
         let discovered_servers_info = self.host_discovery_impl().await.unwrap();
 
         return Ok(Response::new(DiscoverHostsResponse {
-            servers_info: discovered_servers_info
-                .into_iter()
-                .map(|info| cli::ServerInfo {
-                    uuid: info.uuid,
-                    name: info.name,
-                    hostname: info.hostname,
-                    address: info.address,
-                })
-                .collect(),
+            servers_info: discovered_servers_info,
         }));
     }
 }
 
 impl ClientApiImpl {
-    async fn check_hello(&self, ipv4_addr: &str) -> Option<p2p::ServerInfo> {
+    async fn check_hello(&self, ipv4_addr: &str) -> Option<server::ServerInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
         let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
@@ -206,7 +188,7 @@ impl ClientApiImpl {
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
-            server_info: Some(p2p::ServerInfo {
+            server_info: Some(server::ServerInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,
@@ -234,7 +216,7 @@ impl ClientApiImpl {
         Some(remote_server_info)
     }
 
-    async fn host_discovery_impl(&self) -> Result<Vec<p2p::ServerInfo>, Status> {
+    async fn host_discovery_impl(&self) -> Result<Vec<server::ServerInfo>, Status> {
         // TODO: this could be done once, on server start.
         if !utils::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
@@ -250,7 +232,7 @@ impl ClientApiImpl {
             ));
         };
 
-        let mut serial_responses: Vec<p2p::ServerInfo> = Vec::new();
+        let mut serial_responses: Vec<server::ServerInfo> = Vec::new();
 
         // This could be definitely improved, however it's fine for now.
         for addr in ipv4_addrs.iter() {

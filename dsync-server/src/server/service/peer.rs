@@ -1,5 +1,5 @@
-use dsync_proto::p2p::peer_service_server::PeerService;
-use dsync_proto::p2p::{self, HelloThereRequest, HelloThereResponse};
+use dsync_proto::server::peer_service_server::PeerService;
+use dsync_proto::server::{self, HelloThereRequest, HelloThereResponse};
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
@@ -47,7 +47,7 @@ impl PeerService for PeerServiceImpl {
         };
 
         Ok(Response::new(HelloThereResponse {
-            server_info: Some(p2p::ServerInfo {
+            server_info: Some(server::ServerInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,
