@@ -31,29 +31,18 @@ message AddFileResponse {
 service ClientApi {
     // File related methods
 
-    // rpc FileAdd(FileAddRequest) returns (FileAddResponse);
-    // rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
-    // rpc FileList(FileListRequest) returns (FileListResponse);
+    rpc FileAdd(FileAddRequest) returns (FileAddResponse);
+    rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
+    rpc FileList(FileListRequest) returns (FileListResponse);
 
     // Host related methods
 
-    // rpc HostList(HostListRequest) returns (HostListResponse);
-    // rpc HostDiscover(HostDiscoverRequest) returns (HostDiscoverResponse);
+    rpc HostList(HostListRequest) returns (HostListResponse);
+    rpc HostDiscover(HostDiscoverRequest) returns (HostDiscoverResponse);
 
     // Group management
 
-    // rpc GroupCreate(GroupCreateRequest) returns (GroupCreateResponse);
-    // rpc GroupDelete(GroupDeleteRequest) returns (GroupDeleteResponse);
-    // rpc GroupList(GroupListRequest) returns (GroupListResponse);
-
-    // Legacy
-
-
-    rpc AddFile(AddFileRequest) returns (AddFileResponse);
-
-    rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
-
-    rpc DiscoverHosts(DiscoverHostsRequest) returns (DiscoverHostsResponse);
-
-    rpc ListLocalFiles(ListLocalFilesRequest) returns (ListLocalFilesResponse);
+    rpc GroupCreate(GroupCreateRequest) returns (GroupCreateResponse);
+    rpc GroupDelete(GroupDeleteRequest) returns (GroupDeleteResponse);
+    rpc GroupList(GroupListRequest) returns (GroupListResponse);
 }

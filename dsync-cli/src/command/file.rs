@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::command::utils;
 use anyhow::Context;
-use dsync_proto::cli::{AddFileRequest, ListLocalFilesRequest, client_api_client::ClientApiClient};
+use dsync_proto::cli::{FileAddRequest, FileListRequest, client_api_client::ClientApiClient};
 
 use crate::command::model::LOOPBACK_ADDR_V4;
 
@@ -26,9 +26,9 @@ pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> 
         .context("Looks like the specified path is not a valid unicode")?
         .to_string();
 
-    let file_paths: Vec<String> = vec![path_as_string];
-    let request = tonic::Request::new(AddFileRequest {
-        file_path: file_paths,
+    let request = tonic::Request::new(FileAddRequest {
+        file_path: path_as_string,
+        group_id: None,
     });
 
     let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
@@ -36,7 +36,7 @@ pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
 
-    let response = client.add_file(request).await?;
+    let response = client.file_add(request).await?;
 
     log::info!("Received response from server");
     log::debug!("{response:?}");
@@ -60,20 +60,23 @@ pub(crate) async fn file_list(
         todo!("Group file list is not supported yet");
     }
 
-    let request = tonic::Request::new(ListLocalFilesRequest {});
+    let request = tonic::Request::new(FileListRequest {
+        remote_id: None,
+        group_id: None,
+    });
     let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
 
-    let response = client.list_local_files(request).await?;
+    let response = client.file_list(request).await?;
 
     log::info!("Received response from server");
     log::debug!("{response:?}");
 
     let payload = response.into_inner();
 
-    utils::print_local_files_desc(&payload.file_descs);
+    utils::print_local_files_desc(&payload.file_list);
 
     anyhow::Ok(())
 }

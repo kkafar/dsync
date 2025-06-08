@@ -1,7 +1,7 @@
-// Repeated server-defs, due to some symbol visibility issues.
-
 syntax = "proto3";
 package cli;
+
+import "shared-defs.proto";
 
 message LocalFileDescription {
     string local_id = 1;
@@ -18,7 +18,8 @@ message ListLocalFilesResponse {
 }
 
 message FileAddRequest {
-
+    string file_path = 1;
+    optional string group_id = 2;
 }
 
 message FileAddResponse {
@@ -26,7 +27,8 @@ message FileAddResponse {
 }
 
 message FileRemoveRequest {
-
+    string file_path = 1;
+    optional string group_id = 2;
 }
 
 message FileRemoveResponse {
@@ -34,9 +36,50 @@ message FileRemoveResponse {
 }
 
 message FileListRequest {
-
+    optional string remote_id = 1;
+    optional string group_id = 2;
 }
 
 message FileListResponse {
+    repeated LocalFileDescription file_list = 1;
+}
+
+message HostListRequest {
+    bool discover = 1;
+}
+
+message HostListResponse {
+    repeated shared.ServerInfo host_list = 1;
+}
+
+message HostDiscoverRequest {
+
+}
+
+message HostDiscoverResponse {
+    repeated shared.ServerInfo host_list = 1;
+}
+
+message GroupCreateRequest {
+    string group_id = 1;
+}
+
+message GroupCreateResponse {
+
+}
+
+message GroupDeleteRequest {
+    string group_id = 1;
+}
+
+message GroupDeleteResponse {
+
+}
+
+message GroupListRequest {
+    optional string remote_id = 1;
+}
+
+message GroupListResponse {
 
 }
