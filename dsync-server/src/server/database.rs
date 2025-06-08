@@ -1,6 +1,6 @@
 use std::ops::DerefMut;
 
-use anyhow::{Context, anyhow};
+use anyhow::Context;
 use diesel::{QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 use dsync_proto::p2p;
 use thiserror::Error;

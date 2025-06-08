@@ -27,20 +27,32 @@ message AddFileResponse {
 
 }
 
-message ListLocalFilesRequest {
-
-}
-
-message ListLocalFilesResponse {
-    repeated LocalFileDescription file_descs = 1;
-}
-
 service ClientApi {
+    // File related methods
+
+    // rpc FileAdd(FileAddRequest) returns (FileAddResponse);
+    // rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
+    // rpc FileList(FileListRequest) returns (FileListResponse);
+
+    // Host related methods
+
+    // rpc HostList(HostListRequest) returns (HostListResponse);
+    // rpc HostDiscover(HostDiscoverRequest) returns (HostDiscoverResponse);
+
+    // Group management
+
+    // rpc GroupCreate(GroupCreateRequest) returns (GroupCreateResponse);
+    // rpc GroupDelete(GroupDeleteRequest) returns (GroupDeleteResponse);
+    // rpc GroupList(GroupListRequest) returns (GroupListResponse);
+
+    // Legacy
+
+
+    rpc AddFile(AddFileRequest) returns (AddFileResponse);
+
     rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
 
     rpc DiscoverHosts(DiscoverHostsRequest) returns (DiscoverHostsResponse);
-
-    rpc AddFile(AddFileRequest) returns (AddFileResponse);
 
     rpc ListLocalFiles(ListLocalFilesRequest) returns (ListLocalFilesResponse);
 }
