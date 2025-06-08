@@ -1,4 +1,5 @@
 use clap::Parser;
+
 use command::Commands;
 
 pub(crate) mod command;

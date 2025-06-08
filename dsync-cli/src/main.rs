@@ -1,4 +1,5 @@
 mod cli;
+mod command;
 mod logging;
 
 use clap::Parser;
