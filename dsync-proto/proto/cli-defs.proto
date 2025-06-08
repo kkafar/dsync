@@ -4,82 +4,52 @@ package cli;
 import "shared-defs.proto";
 
 message LocalFileDescription {
-    string local_id = 1;
-    string file_path = 2;
-    string hash_sha1 = 3;
+  string local_id = 1;
+  string file_path = 2;
+  string hash_sha1 = 3;
 }
 
-message ListLocalFilesRequest {
+message ListLocalFilesRequest {}
 
-}
-
-message ListLocalFilesResponse {
-    repeated LocalFileDescription file_descs = 1;
-}
+message ListLocalFilesResponse { repeated LocalFileDescription file_descs = 1; }
 
 message FileAddRequest {
-    string file_path = 1;
-    optional string group_id = 2;
+  string file_path = 1;
+  optional string group_id = 2;
 }
 
-message FileAddResponse {
-
-}
+message FileAddResponse {}
 
 message FileRemoveRequest {
-    string file_path = 1;
-    optional string group_id = 2;
+  string file_path = 1;
+  optional string group_id = 2;
 }
 
-message FileRemoveResponse {
-
-}
+message FileRemoveResponse {}
 
 message FileListRequest {
-    optional string remote_id = 1;
-    optional string group_id = 2;
+  optional string remote_id = 1;
+  optional string group_id = 2;
 }
 
-message FileListResponse {
-    repeated LocalFileDescription file_list = 1;
-}
+message FileListResponse { repeated LocalFileDescription file_list = 1; }
 
-message HostListRequest {
-    bool discover = 1;
-}
+message HostListRequest { bool discover = 1; }
 
-message HostListResponse {
-    repeated shared.ServerInfo host_list = 1;
-}
+message HostListResponse { repeated shared.ServerInfo host_list = 1; }
 
-message HostDiscoverRequest {
+message HostDiscoverRequest {}
 
-}
+message HostDiscoverResponse { repeated shared.ServerInfo host_list = 1; }
 
-message HostDiscoverResponse {
-    repeated shared.ServerInfo host_list = 1;
-}
+message GroupCreateRequest { string group_id = 1; }
 
-message GroupCreateRequest {
-    string group_id = 1;
-}
+message GroupCreateResponse {}
 
-message GroupCreateResponse {
+message GroupDeleteRequest { string group_id = 1; }
 
-}
+message GroupDeleteResponse {}
 
-message GroupDeleteRequest {
-    string group_id = 1;
-}
+message GroupListRequest { optional string remote_id = 1; }
 
-message GroupDeleteResponse {
-
-}
-
-message GroupListRequest {
-    optional string remote_id = 1;
-}
-
-message GroupListResponse {
-
-}
+message GroupListResponse {}
