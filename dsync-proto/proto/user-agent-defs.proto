@@ -1,5 +1,5 @@
 syntax = "proto3";
-package cli;
+package user_agent;
 
 import "shared-defs.proto";
 

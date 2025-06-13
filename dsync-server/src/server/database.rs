@@ -34,12 +34,11 @@ impl DatabaseProxy {
             .load(db_conn.deref_mut())
             .context("Error while loading configuration");
 
-        if results.is_err() {
-            let err = results.unwrap_err();
+        if let Err(err) = results {
             return Err(LocalServerBaseInfoError::Other(err));
         }
 
-        let records = results.unwrap();
+        let mut records = results.unwrap();
 
         if records.is_empty() {
             return Err(LocalServerBaseInfoError::Uninitialized);
@@ -50,9 +49,7 @@ impl DatabaseProxy {
         }
 
         // Unwrap asserted above
-        let server_info = records[0].clone();
-
-        return Ok(server_info);
+        return Ok(records.pop().unwrap());
     }
 
     pub async fn ensure_db_record_exists(

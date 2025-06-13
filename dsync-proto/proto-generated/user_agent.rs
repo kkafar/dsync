@@ -105,7 +105,7 @@ pub struct AddFileRequest {
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct AddFileResponse {}
 /// Generated client implementations.
-pub mod client_api_client {
+pub mod user_agent_service_client {
     #![allow(
         unused_variables,
         dead_code,
@@ -116,10 +116,10 @@ pub mod client_api_client {
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
-    pub struct ClientApiClient<T> {
+    pub struct UserAgentServiceClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl ClientApiClient<tonic::transport::Channel> {
+    impl UserAgentServiceClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -130,7 +130,7 @@ pub mod client_api_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> ClientApiClient<T>
+    impl<T> UserAgentServiceClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::Body>,
         T::Error: Into<StdError>,
@@ -148,7 +148,7 @@ pub mod client_api_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> ClientApiClient<InterceptedService<T, F>>
+        ) -> UserAgentServiceClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -162,7 +162,7 @@ pub mod client_api_client {
                 http::Request<tonic::body::Body>,
             >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
-            ClientApiClient::new(InterceptedService::new(inner, interceptor))
+            UserAgentServiceClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -211,9 +211,12 @@ pub mod client_api_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/FileAdd");
+            let path = http::uri::PathAndQuery::from_static(
+                "/user_agent.UserAgentService/FileAdd",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "FileAdd"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "FileAdd"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn file_remove(
@@ -232,9 +235,12 @@ pub mod client_api_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/FileRemove");
+            let path = http::uri::PathAndQuery::from_static(
+                "/user_agent.UserAgentService/FileRemove",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "FileRemove"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "FileRemove"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn file_list(
@@ -253,9 +259,12 @@ pub mod client_api_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/FileList");
+            let path = http::uri::PathAndQuery::from_static(
+                "/user_agent.UserAgentService/FileList",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "FileList"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "FileList"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn host_list(
@@ -274,9 +283,12 @@ pub mod client_api_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/HostList");
+            let path = http::uri::PathAndQuery::from_static(
+                "/user_agent.UserAgentService/HostList",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "HostList"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "HostList"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn host_discover(
@@ -296,11 +308,11 @@ pub mod client_api_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/cli.ClientApi/HostDiscover",
+                "/user_agent.UserAgentService/HostDiscover",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("cli.ClientApi", "HostDiscover"));
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "HostDiscover"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn group_create(
@@ -320,10 +332,11 @@ pub mod client_api_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/cli.ClientApi/GroupCreate",
+                "/user_agent.UserAgentService/GroupCreate",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "GroupCreate"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "GroupCreate"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn group_delete(
@@ -343,10 +356,11 @@ pub mod client_api_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/cli.ClientApi/GroupDelete",
+                "/user_agent.UserAgentService/GroupDelete",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "GroupDelete"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "GroupDelete"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn group_list(
@@ -365,15 +379,18 @@ pub mod client_api_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/cli.ClientApi/GroupList");
+            let path = http::uri::PathAndQuery::from_static(
+                "/user_agent.UserAgentService/GroupList",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("cli.ClientApi", "GroupList"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "GroupList"));
             self.inner.unary(req, path, codec).await
         }
     }
 }
 /// Generated server implementations.
-pub mod client_api_server {
+pub mod user_agent_service_server {
     #![allow(
         unused_variables,
         dead_code,
@@ -382,9 +399,9 @@ pub mod client_api_server {
         clippy::let_unit_value,
     )]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with ClientApiServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with UserAgentServiceServer.
     #[async_trait]
-    pub trait ClientApi: std::marker::Send + std::marker::Sync + 'static {
+    pub trait UserAgentService: std::marker::Send + std::marker::Sync + 'static {
         async fn file_add(
             &self,
             request: tonic::Request<super::FileAddRequest>,
@@ -440,14 +457,14 @@ pub mod client_api_server {
         >;
     }
     #[derive(Debug)]
-    pub struct ClientApiServer<T> {
+    pub struct UserAgentServiceServer<T> {
         inner: Arc<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
         max_decoding_message_size: Option<usize>,
         max_encoding_message_size: Option<usize>,
     }
-    impl<T> ClientApiServer<T> {
+    impl<T> UserAgentServiceServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -498,9 +515,9 @@ pub mod client_api_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for ClientApiServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for UserAgentServiceServer<T>
     where
-        T: ClientApi,
+        T: UserAgentService,
         B: Body + std::marker::Send + 'static,
         B::Error: Into<StdError> + std::marker::Send + 'static,
     {
@@ -515,10 +532,12 @@ pub mod client_api_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/cli.ClientApi/FileAdd" => {
+                "/user_agent.UserAgentService/FileAdd" => {
                     #[allow(non_camel_case_types)]
-                    struct FileAddSvc<T: ClientApi>(pub Arc<T>);
-                    impl<T: ClientApi> tonic::server::UnaryService<super::FileAddRequest>
+                    struct FileAddSvc<T: UserAgentService>(pub Arc<T>);
+                    impl<
+                        T: UserAgentService,
+                    > tonic::server::UnaryService<super::FileAddRequest>
                     for FileAddSvc<T> {
                         type Response = super::FileAddResponse;
                         type Future = BoxFuture<
@@ -531,7 +550,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::file_add(&inner, request).await
+                                <T as UserAgentService>::file_add(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -558,11 +577,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/FileRemove" => {
+                "/user_agent.UserAgentService/FileRemove" => {
                     #[allow(non_camel_case_types)]
-                    struct FileRemoveSvc<T: ClientApi>(pub Arc<T>);
+                    struct FileRemoveSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::FileRemoveRequest>
                     for FileRemoveSvc<T> {
                         type Response = super::FileRemoveResponse;
@@ -576,7 +595,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::file_remove(&inner, request).await
+                                <T as UserAgentService>::file_remove(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -603,11 +622,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/FileList" => {
+                "/user_agent.UserAgentService/FileList" => {
                     #[allow(non_camel_case_types)]
-                    struct FileListSvc<T: ClientApi>(pub Arc<T>);
+                    struct FileListSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::FileListRequest>
                     for FileListSvc<T> {
                         type Response = super::FileListResponse;
@@ -621,7 +640,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::file_list(&inner, request).await
+                                <T as UserAgentService>::file_list(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -648,11 +667,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/HostList" => {
+                "/user_agent.UserAgentService/HostList" => {
                     #[allow(non_camel_case_types)]
-                    struct HostListSvc<T: ClientApi>(pub Arc<T>);
+                    struct HostListSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::HostListRequest>
                     for HostListSvc<T> {
                         type Response = super::HostListResponse;
@@ -666,7 +685,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::host_list(&inner, request).await
+                                <T as UserAgentService>::host_list(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -693,11 +712,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/HostDiscover" => {
+                "/user_agent.UserAgentService/HostDiscover" => {
                     #[allow(non_camel_case_types)]
-                    struct HostDiscoverSvc<T: ClientApi>(pub Arc<T>);
+                    struct HostDiscoverSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::HostDiscoverRequest>
                     for HostDiscoverSvc<T> {
                         type Response = super::HostDiscoverResponse;
@@ -711,7 +730,8 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::host_discover(&inner, request).await
+                                <T as UserAgentService>::host_discover(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -738,11 +758,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/GroupCreate" => {
+                "/user_agent.UserAgentService/GroupCreate" => {
                     #[allow(non_camel_case_types)]
-                    struct GroupCreateSvc<T: ClientApi>(pub Arc<T>);
+                    struct GroupCreateSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::GroupCreateRequest>
                     for GroupCreateSvc<T> {
                         type Response = super::GroupCreateResponse;
@@ -756,7 +776,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::group_create(&inner, request).await
+                                <T as UserAgentService>::group_create(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -783,11 +803,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/GroupDelete" => {
+                "/user_agent.UserAgentService/GroupDelete" => {
                     #[allow(non_camel_case_types)]
-                    struct GroupDeleteSvc<T: ClientApi>(pub Arc<T>);
+                    struct GroupDeleteSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::GroupDeleteRequest>
                     for GroupDeleteSvc<T> {
                         type Response = super::GroupDeleteResponse;
@@ -801,7 +821,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::group_delete(&inner, request).await
+                                <T as UserAgentService>::group_delete(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -828,11 +848,11 @@ pub mod client_api_server {
                     };
                     Box::pin(fut)
                 }
-                "/cli.ClientApi/GroupList" => {
+                "/user_agent.UserAgentService/GroupList" => {
                     #[allow(non_camel_case_types)]
-                    struct GroupListSvc<T: ClientApi>(pub Arc<T>);
+                    struct GroupListSvc<T: UserAgentService>(pub Arc<T>);
                     impl<
-                        T: ClientApi,
+                        T: UserAgentService,
                     > tonic::server::UnaryService<super::GroupListRequest>
                     for GroupListSvc<T> {
                         type Response = super::GroupListResponse;
@@ -846,7 +866,7 @@ pub mod client_api_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as ClientApi>::group_list(&inner, request).await
+                                <T as UserAgentService>::group_list(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -895,7 +915,7 @@ pub mod client_api_server {
             }
         }
     }
-    impl<T> Clone for ClientApiServer<T> {
+    impl<T> Clone for UserAgentServiceServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -908,8 +928,8 @@ pub mod client_api_server {
         }
     }
     /// Generated gRPC service name
-    pub const SERVICE_NAME: &str = "cli.ClientApi";
-    impl<T> tonic::server::NamedService for ClientApiServer<T> {
+    pub const SERVICE_NAME: &str = "user_agent.UserAgentService";
+    impl<T> tonic::server::NamedService for UserAgentServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }
 }

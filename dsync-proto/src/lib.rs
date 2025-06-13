@@ -5,8 +5,8 @@ pub mod shared {
     include!("../proto-generated/shared.rs");
 }
 
-pub mod cli {
-    include!("../proto-generated/cli.rs");
+pub mod user_agent {
+    include!("../proto-generated/user_agent.rs");
 }
 
 pub mod server {

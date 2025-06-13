@@ -4,7 +4,8 @@ use config::RunConfiguration;
 use database::DatabaseProxy;
 use diesel::{Connection, SqliteConnection};
 use dsync_proto::{
-    cli::client_api_server::ClientApiServer, server::peer_service_server::PeerServiceServer,
+    server::peer_service_server::PeerServiceServer,
+    user_agent::user_agent_service_server::UserAgentServiceServer,
 };
 use global_context::GlobalContext;
 use uuid::Uuid;
@@ -48,13 +49,14 @@ impl Server {
             db_proxy: Arc::new(db_proxy),
         });
 
-        let client_api_instance = service::client::ClientApiImpl::new(g_ctx.clone());
+        let user_agent_service_instance =
+            service::user_agent::UserAgentServiceImpl::new(g_ctx.clone());
         let peer_service_instance = service::peer::PeerServiceImpl::new(g_ctx.clone());
 
         log::info!("Starting server at {:?}", addr);
 
         tonic::transport::Server::builder()
-            .add_service(ClientApiServer::new(client_api_instance))
+            .add_service(UserAgentServiceServer::new(user_agent_service_instance))
             .add_service(PeerServiceServer::new(peer_service_instance))
             .serve(addr)
             .await?;
