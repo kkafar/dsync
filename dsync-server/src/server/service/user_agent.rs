@@ -6,32 +6,32 @@ use crate::server::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServ
 use crate::server::util;
 use crate::utils;
 
-use dsync_proto::cli::client_api_server::ClientApi;
-use dsync_proto::cli::{
+use dsync_proto::server::HelloThereRequest;
+use dsync_proto::server::peer_service_client::PeerServiceClient;
+use dsync_proto::shared;
+use dsync_proto::user_agent::user_agent_service_server::UserAgentService;
+use dsync_proto::user_agent::{
     FileAddRequest, FileAddResponse, FileListRequest, FileListResponse, FileRemoveRequest,
     FileRemoveResponse, GroupCreateRequest, GroupCreateResponse, GroupDeleteRequest,
     GroupDeleteResponse, GroupListRequest, GroupListResponse, HostDiscoverRequest,
     HostDiscoverResponse, HostListRequest, HostListResponse, LocalFileDescription,
 };
-use dsync_proto::server::HelloThereRequest;
-use dsync_proto::server::peer_service_client::PeerServiceClient;
-use dsync_proto::shared;
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
 
-pub struct ClientApiImpl {
+pub struct UserAgentServiceImpl {
     ctx: Arc<GlobalContext>,
 }
 
-impl ClientApiImpl {
+impl UserAgentServiceImpl {
     pub fn new(ctx: Arc<GlobalContext>) -> Self {
         Self { ctx }
     }
 }
 
 #[tonic::async_trait]
-impl ClientApi for ClientApiImpl {
+impl UserAgentService for UserAgentServiceImpl {
     async fn file_add(
         &self,
         request: Request<FileAddRequest>,
@@ -204,7 +204,7 @@ impl ClientApi for ClientApiImpl {
     }
 }
 
-impl ClientApiImpl {
+impl UserAgentServiceImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<shared::ServerInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);

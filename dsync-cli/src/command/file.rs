@@ -2,8 +2,9 @@ use std::path::Path;
 
 use crate::command::utils;
 use anyhow::Context;
-use dsync_proto::cli::{
-    FileAddRequest, FileListRequest, FileRemoveRequest, client_api_client::ClientApiClient,
+use dsync_proto::user_agent::{
+    FileAddRequest, FileListRequest, FileRemoveRequest,
+    user_agent_service_client::UserAgentServiceClient,
 };
 
 use crate::command::model::LOOPBACK_ADDR_V4;
@@ -33,7 +34,7 @@ pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> 
         group_id: None,
     });
 
-    let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -70,7 +71,7 @@ pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<(
         group_id: None,
     });
 
-    let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -99,7 +100,7 @@ pub(crate) async fn file_list(
         remote_id: None,
         group_id: None,
     });
-    let mut client = ClientApiClient::connect(LOOPBACK_ADDR_V4).await?;
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");

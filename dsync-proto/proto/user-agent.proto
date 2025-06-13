@@ -1,7 +1,7 @@
 syntax = "proto3";
-package cli;
+package user_agent;
 
-import "cli-defs.proto";
+import "user-agent-defs.proto";
 import "shared-defs.proto";
 
 message ListHostsRequest {}
@@ -16,7 +16,7 @@ message AddFileRequest { repeated string file_path = 1; }
 
 message AddFileResponse {}
 
-service ClientApi {
+service UserAgentService {
   // File related methods
 
   rpc FileAdd(FileAddRequest) returns (FileAddResponse);

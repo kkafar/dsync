@@ -1,4 +1,4 @@
-use dsync_proto::{cli, shared};
+use dsync_proto::{shared, user_agent};
 use prettytable::row;
 
 pub(super) fn print_servers_info(server_info_coll: &[shared::ServerInfo]) -> () {
@@ -17,7 +17,7 @@ pub(super) fn print_servers_info(server_info_coll: &[shared::ServerInfo]) -> () 
     table.printstd();
 }
 
-pub(super) fn print_local_files_desc(file_descs: &[cli::LocalFileDescription]) -> () {
+pub(super) fn print_local_files_desc(file_descs: &[user_agent::LocalFileDescription]) -> () {
     use prettytable as pt;
 
     let mut table = pt::Table::new();
