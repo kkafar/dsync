@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let env_file_path_from_env = env::var(server::config::keys::ENV_FILE)
         .ok()
-        .map(|path_string| PathBuf::from(path_string));
+        .map(PathBuf::from);
 
     let env_file_path_input = args.env_file.as_ref().or(env_file_path_from_env.as_ref());
 
