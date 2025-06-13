@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::command::model::{GroupId, RemoteId};
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub(crate) enum FileCommand {
     /// Add file to the track list. When added,
     /// this file can be synced by any remote peer.

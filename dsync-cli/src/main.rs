@@ -11,6 +11,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = logging::configure_logging(&args);
     log::info!("dsync-client start");
 
-    let _ = args.command.handle().await?;
+    if let Err(err) = args.command.handle().await {
+        log::error!("Command failed with error: {err}");
+        return Err(err.into());
+    };
+
     Ok(())
 }
