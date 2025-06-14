@@ -1,11 +1,13 @@
 use std::ops::DerefMut;
 
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 use dsync_proto::shared;
-use thiserror::Error;
 
-use models::{LocalFilesWoIdRow, LocalServerBaseInfoRow, PeerAddrV4Row, PeerServerBaseInfoRow};
+use models::{
+    LocalFilesWoIdRow, LocalGroupQueryRow, LocalGroupWoIdInsertRow, LocalServerBaseInfoRow,
+    PeerAddrV4Row, PeerServerBaseInfoRow,
+};
 
 pub(crate) mod models;
 mod schema;
@@ -206,9 +208,50 @@ impl DatabaseProxy {
 
         anyhow::Ok(result)
     }
+
+    pub async fn save_local_group(&self, group_id: &str) -> Result<usize, SaveLocalGroupError> {
+        use schema::local_groups as lg;
+
+        let mut connection = self.conn.lock().await;
+        let result = diesel::insert_into(lg::table)
+            .values(LocalGroupWoIdInsertRow { name: group_id })
+            .execute(&mut *connection);
+
+        match result {
+            Ok(aff_rows) => Ok(aff_rows),
+            Err(err) => match err {
+                diesel::result::Error::DatabaseError(db_err_kind, _) => match db_err_kind {
+                    diesel::result::DatabaseErrorKind::UniqueViolation => {
+                        Err(SaveLocalGroupError::AlreadyExists {
+                            group_id: group_id.into(),
+                        })
+                    }
+                    _ => Err(SaveLocalGroupError::Other),
+                },
+                _ => Err(SaveLocalGroupError::Other),
+            },
+        }
+    }
+
+    pub async fn fetch_local_groups(&self) -> Result<Vec<shared::GroupInfo>, anyhow::Error> {
+        use schema::local_groups as lg;
+
+        let mut connection = self.conn.lock().await;
+        let result = lg::table
+            .select(LocalGroupQueryRow::as_select())
+            .load::<LocalGroupQueryRow>(&mut *connection)?;
+
+        Ok(result
+            .into_iter()
+            .map(|row| shared::GroupInfo {
+                local_id: row.id,
+                name: row.name,
+            })
+            .collect())
+    }
 }
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum LocalServerBaseInfoError {
     #[error("No local server base info present")]
     Uninitialized,
@@ -218,6 +261,15 @@ pub enum LocalServerBaseInfoError {
 
     #[error("Other error `{0}`")]
     Other(anyhow::Error),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum SaveLocalGroupError {
+    #[error("Group with id: {group_id} already exists")]
+    AlreadyExists { group_id: String },
+
+    #[error("Other error when saving local group")]
+    Other,
 }
 
 // pub enum PeerServerInfoFetchError {

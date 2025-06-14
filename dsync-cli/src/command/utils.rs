@@ -30,3 +30,17 @@ pub(super) fn print_local_files_desc(file_descs: &[user_agent::LocalFileDescript
 
     table.printstd();
 }
+
+pub(super) fn print_local_group_info(group_list: &[shared::GroupInfo]) {
+    use prettytable as pt;
+
+    let mut table = pt::Table::new();
+
+    table.add_row(row!["LID", "NAME"]);
+
+    group_list.iter().for_each(|group| {
+        table.add_row(row![group.local_id, group.name]);
+    });
+
+    table.printstd();
+}

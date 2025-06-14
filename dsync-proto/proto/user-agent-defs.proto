@@ -52,4 +52,4 @@ message GroupDeleteResponse {}
 
 message GroupListRequest { optional string remote_id = 1; }
 
-message GroupListResponse {}
+message GroupListResponse { repeated shared.GroupInfo group_list = 1; }

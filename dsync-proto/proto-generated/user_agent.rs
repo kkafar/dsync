@@ -81,8 +81,11 @@ pub struct GroupListRequest {
     #[prost(string, optional, tag = "1")]
     pub remote_id: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct GroupListResponse {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GroupListResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub group_list: ::prost::alloc::vec::Vec<super::shared::GroupInfo>,
+}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct ListHostsRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]

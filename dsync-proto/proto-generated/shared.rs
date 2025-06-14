@@ -10,3 +10,10 @@ pub struct ServerInfo {
     #[prost(string, tag = "4")]
     pub address: ::prost::alloc::string::String,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GroupInfo {
+    #[prost(int32, tag = "1")]
+    pub local_id: i32,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+}
