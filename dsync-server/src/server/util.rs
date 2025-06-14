@@ -7,15 +7,13 @@ pub(super) fn compute_sha1_hash_from_file(
     let path: &Path = file_path.as_ref();
 
     if !path.is_file() {
-        return Err(anyhow::anyhow!("Provided file_path is not a regular file"));
+        anyhow::bail!("Provided file_path is not a regular file");
     }
 
     let mut file_handle = match std::fs::OpenOptions::new().read(true).open(path) {
         Ok(file_handle) => file_handle,
         Err(err) => {
-            return Err(anyhow::anyhow!(format!(
-                "Failed to open file: {path:?} with error: {err}"
-            )));
+            anyhow::bail!("Failed to open file: {path:?} with error: {err}");
         }
     };
 

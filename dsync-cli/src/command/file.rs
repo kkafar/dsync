@@ -34,7 +34,9 @@ pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> 
         group_id: None,
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4).await?;
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
+        .await
+        .context("Failed to connect to server")?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -71,7 +73,9 @@ pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<(
         group_id: None,
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4).await?;
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
+        .await
+        .context("Failed to connect to server")?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -100,7 +104,10 @@ pub(crate) async fn file_list(
         remote_id: None,
         group_id: None,
     });
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4).await?;
+
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
+        .await
+        .context("Failed to connect to server")?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");

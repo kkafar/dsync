@@ -6,7 +6,7 @@ use crate::command;
 
 use clap::Subcommand;
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub(crate) enum Commands {
     /// Manage local & remote hosts (peers)
     #[command(subcommand)]

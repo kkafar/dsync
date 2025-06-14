@@ -2,7 +2,7 @@ use clap::Subcommand;
 
 use crate::command::model::{GroupId, RemoteId};
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub(crate) enum GroupCommand {
     /// Create group with given ID. Groups must be unique across local host.
     /// They might however repeat across different peers.

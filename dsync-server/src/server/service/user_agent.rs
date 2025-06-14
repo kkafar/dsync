@@ -230,12 +230,10 @@ impl UserAgentServiceImpl {
 
         let response = client_conn.hello_there(request).await.ok()?.into_inner();
 
-        if response.server_info.is_none() {
+        let Some(mut remote_server_info) = response.server_info else {
             log::warn!(target: "pslog", "Invalid response from peer, server info must not be none");
             return None;
-        }
-
-        let mut remote_server_info = response.server_info.unwrap();
+        };
 
         assert!(
             remote_server_info.address == "".to_owned(),
