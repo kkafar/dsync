@@ -219,7 +219,12 @@ impl UserAgentService for UserAgentServiceImpl {
         &self,
         request: Request<GroupListRequest>,
     ) -> Result<Response<GroupListResponse>, Status> {
-        Err(tonic::Status::unimplemented("Not yet implemented"))
+        let group_list = match self.ctx.db_proxy.fetch_local_groups().await {
+            Ok(groups) => groups,
+            Err(err) => return Err(tonic::Status::internal(format!("Failed with error: {err}"))),
+        };
+
+        Ok(tonic::Response::new(GroupListResponse { group_list }))
     }
 }
 

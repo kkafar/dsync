@@ -5,8 +5,8 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteC
 use dsync_proto::shared;
 
 use models::{
-    LocalFilesWoIdRow, LocalGroupWoIdInsertRow, LocalServerBaseInfoRow, PeerAddrV4Row,
-    PeerServerBaseInfoRow,
+    LocalFilesWoIdRow, LocalGroupQueryRow, LocalGroupWoIdInsertRow, LocalServerBaseInfoRow,
+    PeerAddrV4Row, PeerServerBaseInfoRow,
 };
 
 pub(crate) mod models;
@@ -231,6 +231,23 @@ impl DatabaseProxy {
                 _ => Err(SaveLocalGroupError::Other),
             },
         }
+    }
+
+    pub async fn fetch_local_groups(&self) -> Result<Vec<shared::GroupInfo>, anyhow::Error> {
+        use schema::local_groups as lg;
+
+        let mut connection = self.conn.lock().await;
+        let result = lg::table
+            .select(LocalGroupQueryRow::as_select())
+            .load::<LocalGroupQueryRow>(&mut *connection)?;
+
+        Ok(result
+            .into_iter()
+            .map(|row| shared::GroupInfo {
+                local_id: row.id,
+                name: row.name,
+            })
+            .collect())
     }
 }
 

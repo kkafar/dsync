@@ -44,9 +44,15 @@ pub struct LocalFilesRow {
     pub hash_sha1: String,
 }
 
-#[derive(Queryable, Insertable, Clone, Debug)]
-#[diesel(table_name = super::schema::local_groups)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+#[derive(Insertable, Clone, Debug)]
+#[diesel(table_name = super::schema::local_groups, check_for_backend(diesel::sqlite::Sqlite))]
 pub struct LocalGroupWoIdInsertRow<'a> {
     pub name: &'a str,
+}
+
+#[derive(Queryable, Selectable, Clone, Debug)]
+#[diesel(table_name = super::schema::local_groups, check_for_backend(diesel::sqlite::Sqlite))]
+pub struct LocalGroupQueryRow {
+    pub id: i32,
+    pub name: String,
 }
