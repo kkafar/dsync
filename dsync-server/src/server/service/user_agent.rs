@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::server::database::SaveLocalGroupError;
 use crate::server::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::server::util;
 use crate::utils;
@@ -186,7 +187,25 @@ impl UserAgentService for UserAgentServiceImpl {
         &self,
         request: Request<GroupCreateRequest>,
     ) -> Result<Response<GroupCreateResponse>, Status> {
-        Err(tonic::Status::unimplemented("Not yet implemented"))
+        log::info!("Received GroupCreateRequest");
+
+        let payload = request.into_inner();
+        match self.ctx.db_proxy.save_local_group(&payload.group_id).await {
+            Ok(_) => Ok(tonic::Response::new(GroupCreateResponse {})),
+            Err(err) => {
+                log::warn!("Failed to save local group with error: {err}");
+                match err {
+                    SaveLocalGroupError::AlreadyExists { group_id } => {
+                        Err(tonic::Status::already_exists(format!(
+                            "Group with id: \"{group_id}\" already exists"
+                        )))
+                    }
+                    SaveLocalGroupError::Other => Err(tonic::Status::unknown(format!(
+                        "Unknown error raised while saving local group: {err}",
+                    ))),
+                }
+            }
+        }
     }
 
     async fn group_delete(
