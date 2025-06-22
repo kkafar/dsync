@@ -84,7 +84,8 @@ impl UserAgentService for UserAgentServiceImpl {
         };
 
         // 3 - save file to the db
-        self.ctx
+        let result = self
+            .ctx
             .db_proxy
             .save_local_file(LocalFilesWoIdRow {
                 file_path: file_abs_path_string,
@@ -92,7 +93,22 @@ impl UserAgentService for UserAgentServiceImpl {
             })
             .await;
 
-        return Ok(tonic::Response::new(FileAddResponse {}));
+        match result {
+            Ok(_) => Ok(tonic::Response::new(FileAddResponse {})),
+            Err(err) => match err {
+                FileAddError::AlreadyExists { file_name } => Err(tonic::Status::already_exists(
+                    format!("File: {file_name} is already tracked"),
+                )),
+                FileAddError::OtherDatabaseError { kind } => {
+                    Err(tonic::Status::failed_precondition(format!(
+                        "Some other database error: {kind:?}"
+                    )))
+                }
+                FileAddError::Other(err) => {
+                    Err(tonic::Status::unknown(format!("Unknown error: {err}")))
+                }
+            },
+        }
     }
 
     async fn file_remove(

@@ -176,15 +176,26 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn save_local_file(&self, local_file: LocalFilesWoIdRow) {
+    pub async fn save_local_file(&self, local_file: LocalFilesWoIdRow) -> Result<(), FileAddError> {
         use schema::local_files as lf;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = connection.deref_mut();
-        diesel::insert_into(lf::table)
-            .values(local_file)
+        match diesel::insert_into(lf::table)
+            .values(&local_file)
             .execute(conn_ref_mut)
-            .expect("Failed to register local file as tracked");
+        {
+            Ok(_) => Ok(()),
+            Err(error) => match error {
+                diesel::result::Error::DatabaseError(kind, _extras) => match kind {
+                    DatabaseErrorKind::UniqueViolation => Err(FileAddError::AlreadyExists {
+                        file_name: local_file.file_path,
+                    }),
+                    _ => Err(FileAddError::OtherDatabaseError { kind }),
+                },
+                _ => Err(FileAddError::Other(error.into())),
+            },
+        }
     }
 
     pub async fn fetch_local_files(&self) -> anyhow::Result<Vec<models::LocalFilesRow>> {
