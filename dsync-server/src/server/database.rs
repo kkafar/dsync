@@ -1,14 +1,19 @@
 use std::ops::DerefMut;
 
-use anyhow::{Context, anyhow};
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
+use anyhow::Context;
+use diesel::{
+    ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
+    result::DatabaseErrorKind,
+};
 use dsync_proto::shared;
 
+use error::{FileAddError, LocalServerBaseInfoError, SaveLocalGroupError};
 use models::{
     LocalFilesWoIdRow, LocalGroupQueryRow, LocalGroupWoIdInsertRow, LocalServerBaseInfoRow,
     PeerAddrV4Row, PeerServerBaseInfoRow,
 };
 
+pub(crate) mod error;
 pub(crate) mod models;
 mod schema;
 
@@ -171,15 +176,26 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn save_local_file(&self, local_file: LocalFilesWoIdRow) {
+    pub async fn save_local_file(&self, local_file: LocalFilesWoIdRow) -> Result<(), FileAddError> {
         use schema::local_files as lf;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = connection.deref_mut();
-        diesel::insert_into(lf::table)
-            .values(local_file)
+        match diesel::insert_into(lf::table)
+            .values(&local_file)
             .execute(conn_ref_mut)
-            .expect("Failed to register local file as tracked");
+        {
+            Ok(_) => Ok(()),
+            Err(error) => match error {
+                diesel::result::Error::DatabaseError(kind, _extras) => match kind {
+                    DatabaseErrorKind::UniqueViolation => Err(FileAddError::AlreadyExists {
+                        file_name: local_file.file_path,
+                    }),
+                    _ => Err(FileAddError::OtherDatabaseError { kind }),
+                },
+                _ => Err(FileAddError::Other(error.into())),
+            },
+        }
     }
 
     pub async fn fetch_local_files(&self) -> anyhow::Result<Vec<models::LocalFilesRow>> {
@@ -250,28 +266,3 @@ impl DatabaseProxy {
             .collect())
     }
 }
-
-#[derive(thiserror::Error, Debug)]
-pub enum LocalServerBaseInfoError {
-    #[error("No local server base info present")]
-    Uninitialized,
-
-    #[error("Invalid record count: `{0}`")]
-    InvalidRecordCount(usize),
-
-    #[error("Other error `{0}`")]
-    Other(anyhow::Error),
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum SaveLocalGroupError {
-    #[error("Group with id: {group_id} already exists")]
-    AlreadyExists { group_id: String },
-
-    #[error("Other error when saving local group")]
-    Other,
-}
-
-// pub enum PeerServerInfoFetchError {
-//     NoExistingAddressRecord
-// }
