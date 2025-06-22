@@ -1,8 +1,9 @@
+use std::fmt::format;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::server::database::SaveLocalGroupError;
+use crate::server::database::error::{FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServerBaseInfoRow};
 use crate::server::util;
 use crate::utils;

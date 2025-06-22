@@ -1,14 +1,19 @@
 use std::ops::DerefMut;
 
-use anyhow::{Context, anyhow};
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
+use anyhow::Context;
+use diesel::{
+    ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
+    result::DatabaseErrorKind,
+};
 use dsync_proto::shared;
 
+use error::{FileAddError, LocalServerBaseInfoError, SaveLocalGroupError};
 use models::{
     LocalFilesWoIdRow, LocalGroupQueryRow, LocalGroupWoIdInsertRow, LocalServerBaseInfoRow,
     PeerAddrV4Row, PeerServerBaseInfoRow,
 };
 
+pub(crate) mod error;
 pub(crate) mod models;
 mod schema;
 
@@ -250,28 +255,3 @@ impl DatabaseProxy {
             .collect())
     }
 }
-
-#[derive(thiserror::Error, Debug)]
-pub enum LocalServerBaseInfoError {
-    #[error("No local server base info present")]
-    Uninitialized,
-
-    #[error("Invalid record count: `{0}`")]
-    InvalidRecordCount(usize),
-
-    #[error("Other error `{0}`")]
-    Other(anyhow::Error),
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum SaveLocalGroupError {
-    #[error("Group with id: {group_id} already exists")]
-    AlreadyExists { group_id: String },
-
-    #[error("Other error when saving local group")]
-    Other,
-}
-
-// pub enum PeerServerInfoFetchError {
-//     NoExistingAddressRecord
-// }
