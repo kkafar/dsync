@@ -37,6 +37,10 @@ impl Commands {
                     remote_id,
                     group_id,
                 } => command::file::file_list(remote_id, group_id).await,
+                file::FileCommand::Copy {
+                    source,
+                    destination,
+                } => command::file::file_copy(source, destination).await,
                 file::FileCommand::Sync => command::file::file_sync().await,
                 file::FileCommand::Unsync => command::file::file_unsync().await,
             },

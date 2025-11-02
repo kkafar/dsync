@@ -124,6 +124,10 @@ pub(crate) async fn file_list(
     anyhow::Ok(())
 }
 
+pub(crate) async fn file_copy(_source: String, _destination: String) -> anyhow::Result<()> {
+    todo!()
+}
+
 pub(crate) async fn file_sync() -> anyhow::Result<()> {
     todo!()
 }
