@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::command::utils;
 use anyhow::Context;
 use dsync_proto::user_agent::{
-    FileAddRequest, FileListRequest, FileRemoveRequest,
+    FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
     user_agent_service_client::UserAgentServiceClient,
 };
 
@@ -124,8 +124,27 @@ pub(crate) async fn file_list(
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_copy(_source: String, _destination: String) -> anyhow::Result<()> {
-    todo!()
+pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Result<()> {
+    let request = tonic::Request::new(FileCopyRequest {
+        source_host: String::from("localhost"),
+        destination_host: String::from("localhost"),
+        source_paths: Vec::new(),
+        destination_path: destination,
+    });
+
+    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
+        .await
+        .context("Failed to connect to server")?;
+
+    log::info!("Sending request to server");
+    log::debug!("{request:?}");
+
+    let response = client.file_copy(request).await?;
+
+    log::info!("Received response from server");
+    log::debug!("{response:?}");
+
+    anyhow::Ok(())
 }
 
 pub(crate) async fn file_sync() -> anyhow::Result<()> {
