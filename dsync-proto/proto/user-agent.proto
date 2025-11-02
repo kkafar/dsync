@@ -22,6 +22,7 @@ service UserAgentService {
   rpc FileAdd(FileAddRequest) returns (FileAddResponse);
   rpc FileRemove(FileRemoveRequest) returns (FileRemoveResponse);
   rpc FileList(FileListRequest) returns (FileListResponse);
+  rpc FileCopy(FileCopyRequest) returns (FileCopyResponse);
 
   // Host related methods
 

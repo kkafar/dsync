@@ -45,6 +45,19 @@ pub struct FileListResponse {
     #[prost(message, repeated, tag = "1")]
     pub file_list: ::prost::alloc::vec::Vec<LocalFileDescription>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FileCopyRequest {
+    #[prost(string, tag = "1")]
+    pub source_host: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub destination_host: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "3")]
+    pub source_paths: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, tag = "4")]
+    pub destination_path: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct FileCopyResponse {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct HostListRequest {
     #[prost(bool, tag = "1")]
@@ -270,6 +283,30 @@ pub mod user_agent_service_client {
                 .insert(GrpcMethod::new("user_agent.UserAgentService", "FileList"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn file_copy(
+            &mut self,
+            request: impl tonic::IntoRequest<super::FileCopyRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::FileCopyResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/user_agent.UserAgentService/FileCopy",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("user_agent.UserAgentService", "FileCopy"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn host_list(
             &mut self,
             request: impl tonic::IntoRequest<super::HostListRequest>,
@@ -421,6 +458,13 @@ pub mod user_agent_service_server {
             request: tonic::Request<super::FileListRequest>,
         ) -> std::result::Result<
             tonic::Response<super::FileListResponse>,
+            tonic::Status,
+        >;
+        async fn file_copy(
+            &self,
+            request: tonic::Request<super::FileCopyRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::FileCopyResponse>,
             tonic::Status,
         >;
         async fn host_list(
@@ -655,6 +699,51 @@ pub mod user_agent_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = FileListSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/user_agent.UserAgentService/FileCopy" => {
+                    #[allow(non_camel_case_types)]
+                    struct FileCopySvc<T: UserAgentService>(pub Arc<T>);
+                    impl<
+                        T: UserAgentService,
+                    > tonic::server::UnaryService<super::FileCopyRequest>
+                    for FileCopySvc<T> {
+                        type Response = super::FileCopyResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FileCopyRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as UserAgentService>::file_copy(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = FileCopySvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

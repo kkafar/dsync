@@ -1,4 +1,3 @@
-use log::LevelFilter;
 use log4rs::{
     Config,
     append::console::ConsoleAppender,

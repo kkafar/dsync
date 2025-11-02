@@ -1,4 +1,3 @@
-use std::fmt::format;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -13,10 +12,11 @@ use dsync_proto::server::peer_service_client::PeerServiceClient;
 use dsync_proto::shared;
 use dsync_proto::user_agent::user_agent_service_server::UserAgentService;
 use dsync_proto::user_agent::{
-    FileAddRequest, FileAddResponse, FileListRequest, FileListResponse, FileRemoveRequest,
-    FileRemoveResponse, GroupCreateRequest, GroupCreateResponse, GroupDeleteRequest,
-    GroupDeleteResponse, GroupListRequest, GroupListResponse, HostDiscoverRequest,
-    HostDiscoverResponse, HostListRequest, HostListResponse, LocalFileDescription,
+    FileAddRequest, FileAddResponse, FileCopyRequest, FileCopyResponse, FileListRequest,
+    FileListResponse, FileRemoveRequest, FileRemoveResponse, GroupCreateRequest,
+    GroupCreateResponse, GroupDeleteRequest, GroupDeleteResponse, GroupListRequest,
+    GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
+    HostListResponse, LocalFileDescription,
 };
 use tonic::{Request, Response, Status};
 
@@ -166,9 +166,18 @@ impl UserAgentService for UserAgentServiceImpl {
         }
     }
 
+    async fn file_copy(
+        &self,
+        _request: Request<FileCopyRequest>,
+    ) -> Result<Response<FileCopyResponse>, Status> {
+        Err(tonic::Status::unimplemented(
+            "Endpoint is not yet implemented",
+        ))
+    }
+
     async fn host_list(
         &self,
-        request: Request<HostListRequest>,
+        _request: Request<HostListRequest>,
     ) -> Result<Response<HostListResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
@@ -189,7 +198,7 @@ impl UserAgentService for UserAgentServiceImpl {
 
     async fn host_discover(
         &self,
-        request: Request<HostDiscoverRequest>,
+        _request: Request<HostDiscoverRequest>,
     ) -> Result<Response<HostDiscoverResponse>, Status> {
         log::info!("Received DiscoverHostsRequest");
 
@@ -227,14 +236,14 @@ impl UserAgentService for UserAgentServiceImpl {
 
     async fn group_delete(
         &self,
-        request: Request<GroupDeleteRequest>,
+        _request: Request<GroupDeleteRequest>,
     ) -> Result<Response<GroupDeleteResponse>, Status> {
         Err(tonic::Status::unimplemented("Not yet implemented"))
     }
 
     async fn group_list(
         &self,
-        request: Request<GroupListRequest>,
+        _request: Request<GroupListRequest>,
     ) -> Result<Response<GroupListResponse>, Status> {
         let group_list = match self.ctx.db_proxy.fetch_local_groups().await {
             Ok(groups) => groups,

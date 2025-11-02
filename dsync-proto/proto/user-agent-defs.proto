@@ -34,6 +34,15 @@ message FileListRequest {
 
 message FileListResponse { repeated LocalFileDescription file_list = 1; }
 
+message FileCopyRequest {
+  string source_host = 1;
+  string destination_host = 2;
+  repeated string source_paths = 3;
+  string destination_path = 4;
+}
+
+message FileCopyResponse {}
+
 message HostListRequest { bool discover = 1; }
 
 message HostListResponse { repeated shared.ServerInfo host_list = 1; }
