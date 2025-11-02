@@ -1,3 +1,4 @@
+///! Definition of CLI.
 use clap::Parser;
 
 use command::Commands;
