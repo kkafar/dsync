@@ -37,6 +37,15 @@ pub(crate) enum FileCommand {
         #[arg(short = 'g', long = "group")]
         group_id: Option<GroupId>,
     },
+    /// Copy files between destinations.
+    Copy {
+        /// Source file path from the local host.
+        source: String,
+        /// Destination specification given in appropriat format.
+        /// [HOST_IDENTIFIER@]FILE_PATH. If HOST_IDENTIFIER is ommited,
+        /// the path is treated as local to the origin host.
+        destination: String,
+    },
     Sync,
     Unsync,
 }

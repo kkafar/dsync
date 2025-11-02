@@ -1,0 +1,3 @@
+# See https://github.com/coder3101/protols?tab=readme-ov-file#%EF%B8%8F-configuration
+[config]
+include_paths = ["./dsync-proto/proto/"]
