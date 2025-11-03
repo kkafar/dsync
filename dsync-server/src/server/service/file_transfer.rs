@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::sync::Arc;
 
 use dsync_proto::file_transfer::{
@@ -21,7 +23,7 @@ impl FileTransferServiceImpl {
 impl FileTransferService for FileTransferServiceImpl {
     async fn init_transfer(
         &self,
-        _request: tonic::Request<InitTransferRequest>,
+        request: tonic::Request<InitTransferRequest>,
     ) -> std::result::Result<tonic::Response<InitTransferResponse>, tonic::Status> {
         Ok(tonic::Response::new(InitTransferResponse {
             is_accepted: true,
