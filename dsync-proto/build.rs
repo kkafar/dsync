@@ -9,6 +9,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_api_proto_path = proto_root_dir.join("server.proto");
     let shared_defs_proto_path = proto_root_dir.join("shared-defs.proto");
 
+    let ft_messages = proto_root_dir.join("file-transfer/messages.proto");
+    let ft_service = proto_root_dir.join("file-transfer/service.proto");
+
     tonic_build::configure()
         .out_dir("proto-generated/")
         .compile_protos(
@@ -16,6 +19,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &user_agent_proto_path,
                 &server_api_proto_path,
                 &shared_defs_proto_path,
+                &ft_messages,
+                &ft_service,
             ],
             &[proto_root_dir],
         )?;

@@ -1,0 +1,8 @@
+syntax = "proto3";
+package filetransfer;
+
+import "file-transfer/messages.proto";
+
+service FileTransferService {
+  rpc InitTransfer(InitTransferRequest) returns (InitTransferResponse);
+}
