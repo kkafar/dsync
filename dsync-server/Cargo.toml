@@ -20,3 +20,4 @@ dotenvy = "0.15"
 uuid = { version = "1.17.0", features = ["v4"] }
 clap = { version = "4.5.38", features = ["derive"] }
 sha1_smol = "1.0.1"
+tokio-stream = "0.1.17"

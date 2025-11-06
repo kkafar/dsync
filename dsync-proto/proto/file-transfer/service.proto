@@ -4,5 +4,7 @@ package filetransfer;
 import "file-transfer/messages.proto";
 
 service FileTransferService {
-  rpc InitTransfer(InitTransferRequest) returns (InitTransferResponse);
+  rpc TransferInit(TransferInitRequest) returns (TransferInitResponse);
+  rpc TransferChunk(stream TransferChunkRequest)
+      returns (TransferChunkResponse);
 }
