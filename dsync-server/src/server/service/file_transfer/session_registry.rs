@@ -30,6 +30,13 @@ impl FileTransferSessionRegistry {
         }
         return false;
     }
+
+    pub(crate) fn get_session(&self, session_id: SessionId) -> Option<FileTransferSession> {
+        self.registry
+            .iter()
+            .find(|session| session.session_id == session_id)
+            .cloned()
+    }
 }
 
 impl Default for FileTransferSessionRegistry {

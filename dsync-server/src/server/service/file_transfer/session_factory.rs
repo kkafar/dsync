@@ -1,3 +1,5 @@
+use dsync_proto::file_transfer::TransferInitRequest;
+
 use crate::server::service::file_transfer::session::{FileTransferSession, SessionId};
 
 pub(crate) struct FileTransferSessionFactory {
@@ -13,9 +15,13 @@ impl FileTransferSessionFactory {
 }
 
 impl FileTransferSessionFactory {
-    pub(crate) fn create_session(&mut self) -> FileTransferSession {
+    pub(crate) fn create_session(
+        &mut self,
+        transfer_init_request: TransferInitRequest,
+    ) -> FileTransferSession {
         let new_session = FileTransferSession {
             session_id: self.next_session_id,
+            transfer_init_request,
         };
 
         self.next_session_id = SessionId(self.next_session_id.0 + 1);

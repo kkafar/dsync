@@ -14,7 +14,7 @@ message TransferInitResponse { int32 session_id = 1; }
 message TransferChunkRequest {
   int32 session_id = 1;
   int32 chunk_id = 2;
-  bytes data_buffer = 4;
+  bytes data_buffer = 3;
 }
 
 message TransferChunkResponse {}

@@ -23,7 +23,7 @@ pub struct TransferChunkRequest {
     pub session_id: i32,
     #[prost(int32, tag = "2")]
     pub chunk_id: i32,
-    #[prost(bytes = "vec", tag = "4")]
+    #[prost(bytes = "vec", tag = "3")]
     pub data_buffer: ::prost::alloc::vec::Vec<u8>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
