@@ -7,6 +7,8 @@ use crate::server::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServ
 use crate::server::util;
 use crate::utils;
 
+use dsync_proto::file_transfer::TransferInitRequest;
+use dsync_proto::file_transfer::file_transfer_service_client::FileTransferServiceClient;
 use dsync_proto::server::HelloThereRequest;
 use dsync_proto::server::peer_service_client::PeerServiceClient;
 use dsync_proto::shared;
@@ -18,6 +20,7 @@ use dsync_proto::user_agent::{
     GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
     HostListResponse, LocalFileDescription,
 };
+use tokio::fs::File;
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
@@ -168,11 +171,57 @@ impl UserAgentService for UserAgentServiceImpl {
 
     async fn file_copy(
         &self,
-        _request: Request<FileCopyRequest>,
+        request: Request<FileCopyRequest>,
     ) -> Result<Response<FileCopyResponse>, Status> {
-        Err(tonic::Status::unimplemented(
-            "Endpoint is not yet implemented",
-        ))
+        let request = request.into_inner();
+
+        if request.source_paths.is_empty() {
+            return Err(tonic::Status::invalid_argument("empty-file-list"));
+        }
+
+        // Extract destination host information from database basing on characteristic
+        let dest_host = &request.destination_host;
+
+        let result = self
+            .ctx
+            .db_proxy
+            .fetch_peer_server_info()
+            .await
+            .expect("TODO: Handle this error");
+
+        let dest_host_info = result
+            .iter()
+            .find(|server_info| &server_info.name == dest_host);
+
+        let Some(dest_host_info) = dest_host_info else {
+            return Err(tonic::Status::invalid_argument("server-does-not-exist"));
+        };
+
+        let Ok(mut transfer_client) =
+            FileTransferServiceClient::connect(dest_host_info.address.clone()).await
+        else {
+            return Err(tonic::Status::unavailable("remote-server-unavailable"));
+        };
+
+        let file_path_src = request.source_paths.first().unwrap();
+
+        let transfer_request = TransferInitRequest {
+            file_path_src: file_path_src.clone(),
+            file_path_dst: request.destination_path,
+            chunk_size: 1024,
+            file_sha1: "hello".to_owned(),
+            file_size_bytes: 1024,
+        };
+
+        let transfer_response = match transfer_client.transfer_init(transfer_request).await {
+            Ok(response) => response.into_inner(),
+            Err(status) => {
+                // TODO: Handle this correctly, instead of forwarding the status
+                return Err(status);
+            }
+        };
+
+        Ok(tonic::Response::new(FileCopyResponse {}))
     }
 
     async fn host_list(

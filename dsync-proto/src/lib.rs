@@ -12,3 +12,7 @@ pub mod user_agent {
 pub mod server {
     include!("../proto-generated/server.rs");
 }
+
+pub mod file_transfer {
+    include!("../proto-generated/filetransfer.rs");
+}
