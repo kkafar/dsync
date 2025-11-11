@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use anyhow::Context;
 use diesel::{
     ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
-    result::DatabaseErrorKind,
+    query_dsl::methods::FilterDsl, result::DatabaseErrorKind,
 };
 use dsync_proto::shared;
 
@@ -137,6 +137,26 @@ impl DatabaseProxy {
                 return Err(error.into());
             }
         }
+    }
+
+    pub async fn fetch_peer_addr_by_uuid(&self, uuid: impl AsRef<str>) -> anyhow::Result<String> {
+        use schema::peer_addr_v4::dsl as pa;
+
+        let uuid_str = uuid.as_ref();
+
+        let mut connection = self.conn.lock().await;
+
+        let query_result = QueryDsl::filter(pa::peer_addr_v4, pa::uuid.eq(uuid_str))
+            .select(PeerAddrV4Row::as_select())
+            .first(connection.deref_mut());
+
+        std::mem::drop(connection);
+
+        let Ok(row) = query_result else {
+            anyhow::bail!("Failed to fetch the row");
+        };
+
+        return Ok(row.ipv4_addr);
     }
 
     pub async fn save_peer_server_base_info(&self, peer_info: &[PeerServerBaseInfoRow]) {

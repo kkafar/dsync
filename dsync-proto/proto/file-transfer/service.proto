@@ -4,7 +4,24 @@ package filetransfer;
 import "file-transfer/messages.proto";
 
 service FileTransferService {
+  /**
+   * Request file transfer from one server to another. This should be send from
+   * Origin Host to Source Host.
+   */
+  rpc TransferSubmit(TransferSubmitRequest) returns (TransferSubmitResponse);
+
+  /**
+   * Send from Source Host to Destination host to initiate the file transfer.
+   * This is a header message with all required metadata.
+   */
   rpc TransferInit(TransferInitRequest) returns (TransferInitResponse);
+
+  /**
+   * Transfer actual file data from Source Host to Destination Host.
+   * The stream should complete the whole file. If the connection is
+   * dropped before the file transfer completes the transfered data should be
+   * dropped (rigtht now, TODO: improve this).
+   */
   rpc TransferChunk(stream TransferChunkRequest)
       returns (TransferChunkResponse);
 }

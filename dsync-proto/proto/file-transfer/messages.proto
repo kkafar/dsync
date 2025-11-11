@@ -1,9 +1,40 @@
 syntax = "proto3";
 package filetransfer;
 
+message TransferSubmitFileMetadata {}
+
+/**
+ * Request a file transfer from one server to another.
+ * Meant to be sent to Source Host.
+ */
+message TransferSubmitRequest {
+  /**
+   * UUID of Origin Host of the request. THIS IS NOT THE SOURCE HOST.
+   * Source Host is the one receiving this message.
+   */
+  string host_org_uuid = 1;
+
+  /**
+   * UUID of Destination Host; where the file is to be transmitted to.
+   */
+  string host_dst_uuid = 2;
+
+  /**
+   * ABSOLUTE path to the transmitted file on the Source Host.
+   */
+  string file_path_src = 3;
+
+  /**
+   * ABSOLUTE path to the file transfer destination on Destination Host.
+   */
+  string file_path_dst = 4;
+}
+
+message TransferSubmitResponse {}
+
 message TransferInitRequest {
   string file_path_src = 1;
-  string file_path_dest = 2;
+  string file_path_dst = 2;
   string file_sha1 = 3;
   int64 file_size_bytes = 4;
   int32 chunk_size = 5;

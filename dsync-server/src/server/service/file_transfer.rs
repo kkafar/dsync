@@ -4,14 +4,20 @@ pub(crate) mod session;
 pub(crate) mod session_factory;
 pub(crate) mod session_registry;
 
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+    sync::Arc,
+};
 
 use dsync_proto::file_transfer::{
     TransferChunkRequest, TransferChunkResponse, TransferInitRequest, TransferInitResponse,
+    TransferSubmitRequest, TransferSubmitResponse,
+    file_transfer_service_client::FileTransferServiceClient,
     file_transfer_service_server::FileTransferService,
 };
 use tokio::{
-    fs::{File, OpenOptions},
+    fs::{File, OpenOptions, metadata},
     io::{AsyncWriteExt, BufWriter},
 };
 use tokio_stream::StreamExt;
@@ -24,11 +30,12 @@ use crate::server::{
         session_factory::FileTransferSessionFactory,
         session_registry::FileTransferSessionRegistry,
     },
+    util,
 };
 
 // #[derive(Debug)]
 pub struct FileTransferServiceImpl {
-    ctx: Arc<GlobalContext>,
+    global_ctx: Arc<GlobalContext>,
     session_registry: tokio::sync::Mutex<FileTransferSessionRegistry>,
     session_factory: tokio::sync::Mutex<FileTransferSessionFactory>,
 }
@@ -36,7 +43,7 @@ pub struct FileTransferServiceImpl {
 impl FileTransferServiceImpl {
     pub fn new(ctx: Arc<GlobalContext>) -> Self {
         Self {
-            ctx,
+            global_ctx: ctx,
             session_registry: tokio::sync::Mutex::new(FileTransferSessionRegistry::new()),
             session_factory: tokio::sync::Mutex::new(FileTransferSessionFactory::new()),
         }
@@ -45,10 +52,112 @@ impl FileTransferServiceImpl {
 
 #[tonic::async_trait]
 impl FileTransferService for FileTransferServiceImpl {
+    async fn transfer_submit(
+        &self,
+        request: tonic::Request<TransferSubmitRequest>,
+    ) -> Result<tonic::Response<TransferSubmitResponse>, tonic::Status> {
+        // Here we received request to transfer a file from this server, to another one pointed
+        // by the request.
+        // We need to:
+        //  * verify that the file path is absolute & exists,
+        //  * extract the file information (size, hash),
+        //  * send init request to destination host,
+        //  * on success, schedule data transfer.
+
+        let request_inner = request.into_inner();
+
+        // Step 1
+        // Verify that the file path is absolute & the file exists.
+
+        let file_path_src: PathBuf = PathBuf::from_str(&request_inner.file_path_src)
+            .expect("Path conversion should never fail");
+
+        if !file_path_src.is_absolute() {
+            return Err(tonic::Status::invalid_argument("src-path-not-absolute"));
+        }
+
+        // TODO: Support not only files, but also directories
+        if !file_path_src.is_file() {
+            return Err(tonic::Status::invalid_argument("src-path-not-a-file"));
+        }
+
+        // Step 2
+        // Extract necessary file information
+
+        let Ok(file_metadata) = file_path_src.metadata() else {
+            return Err(tonic::Status::internal("src-path-failed-metadata-fetch"));
+        };
+
+        let Ok(file_size_bytes) = i64::try_from(file_metadata.len()) else {
+            return Err(tonic::Status::internal("file-size-conversion-fail"));
+        };
+
+        let Ok(file_sha1) = util::compute_sha1_hash_from_file_async(&file_path_src, None).await
+        else {
+            return Err(tonic::Status::internal("file-sh1-comput-fail"));
+        };
+
+        // Step 3
+        // Send init message to destination host
+        // FIXME: This does not work in case local host is specified.
+        let Ok(host_dst_addr) = self
+            .global_ctx
+            .db_proxy
+            .fetch_peer_addr_by_uuid(&request_inner.host_dst_uuid)
+            .await
+        else {
+            return Err(tonic::Status::internal("host-dst-addr-missing"));
+        };
+
+        // FIXME: host_dst_addr most likely does not have port information attached
+        let Ok(mut fts_client) = FileTransferServiceClient::connect(host_dst_addr).await else {
+            return Err(tonic::Status::failed_precondition("fts-connection-fail"));
+        };
+
+        let result = fts_client
+            .transfer_init(TransferInitRequest {
+                file_path_src: request_inner.file_path_src,
+                file_path_dst: request_inner.file_path_dst,
+                file_sha1: file_sha1,
+                file_size_bytes: file_size_bytes,
+                chunk_size: 1024,
+            })
+            .await;
+
+        let transfer_session_id = match result {
+            Ok(response) => {
+                let response = response.into_inner();
+                response.session_id
+            }
+            Err(status) => {
+                // log::error!(format!("FTS at {} rejected transfer request: {}", &request_inner.host_dst_uuid, status));
+                return Err(tonic::Status::failed_precondition("fts-rejected"));
+            }
+        };
+
+        // Step 4
+        // Schedule data transfer
+        tokio::spawn(async move {
+            // TODO: Do data transfer here
+            fts_client.transfer_chunk(tokio_stream::iter(vec![TransferChunkRequest {
+                session_id: transfer_session_id,
+                chunk_id: 0,
+                data_buffer: Vec::new(),
+            }]));
+        });
+
+        Ok(tonic::Response::new(TransferSubmitResponse {}))
+    }
+
     async fn transfer_init(
         &self,
         request: tonic::Request<TransferInitRequest>,
     ) -> Result<tonic::Response<TransferInitResponse>, tonic::Status> {
+        // This message means that some other server (or the very same) wants to tranfser file
+        // to us.
+        // We need to either decline the request & provide a reason,
+        // or accept the request & prepare for follow-up data transfer.
+
         let request_inner = request.into_inner();
 
         let session = {
