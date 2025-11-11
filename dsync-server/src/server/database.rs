@@ -101,14 +101,12 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
-    pub async fn fetch_peer_server_info(&self) -> anyhow::Result<Vec<shared::ServerInfo>> {
+    pub async fn fetch_hosts(&self) -> anyhow::Result<Vec<shared::ServerInfo>> {
         use schema::hosts::dsl::*;
 
         let qr_result = {
             let mut connection = self.conn.lock().await;
-            QueryDsl::filter(hosts, is_remote.eq(true))
-                .select(HostsRow::as_select())
-                .load(connection.deref_mut())
+            hosts.select(HostsRow::as_select()).load(&mut *connection)
         };
 
         match qr_result {
