@@ -183,7 +183,7 @@ impl UserAgentService for UserAgentServiceImpl {
         let result = self
             .ctx
             .db_proxy
-            .fetch_peer_server_info()
+            .fetch_hosts()
             .await
             .expect("TODO: Handle this error");
 
@@ -228,7 +228,7 @@ impl UserAgentService for UserAgentServiceImpl {
     ) -> Result<Response<HostListResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
-        let servers_info = match self.ctx.db_proxy.fetch_peer_server_info().await {
+        let servers_info = match self.ctx.db_proxy.fetch_hosts().await {
             Ok(data) => data,
             Err(err) => {
                 log::error!("Error while fetching peer server info: {err}");
