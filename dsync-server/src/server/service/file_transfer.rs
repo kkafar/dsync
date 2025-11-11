@@ -125,7 +125,7 @@ impl FileTransferService for FileTransferServiceImpl {
             file_path_dst: request_inner.file_path_dst,
             file_sha1: file_sha1,
             file_size_bytes: file_size_bytes,
-            chunk_size: 1024,
+            chunk_size: 1024 * 8,
         };
 
         let result = fts_client.transfer_init(transfer_request.clone()).await;
@@ -235,7 +235,12 @@ impl FileTransferService for FileTransferServiceImpl {
         // Make sure the buffer is flushed
         let _flush_res = writer.flush().await;
 
-        // Stream ended
+        // Stream ended -> remove session
+
+        {
+            let mut sreg = self.session_registry.lock().await;
+            assert!(sreg.unregister(session_id));
+        }
 
         Ok(tonic::Response::new(TransferChunkResponse {}))
     }
