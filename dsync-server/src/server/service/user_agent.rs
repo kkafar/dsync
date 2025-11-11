@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::server::database::error::{FileAddError, SaveLocalGroupError};
-use crate::server::database::models::{LocalFilesWoIdRow, PeerAddrV4Row, PeerServerBaseInfoRow};
+use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::util;
 use crate::utils;
 
@@ -20,7 +19,6 @@ use dsync_proto::user_agent::{
     GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
     HostListResponse, LocalFileDescription,
 };
-use tokio::fs::File;
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
@@ -90,7 +88,7 @@ impl UserAgentService for UserAgentServiceImpl {
         let result = self
             .ctx
             .db_proxy
-            .save_local_file(LocalFilesWoIdRow {
+            .save_local_file(FilesLocalFragmentInsert {
                 file_path: file_abs_path_string,
                 hash_sha1: hash,
             })
@@ -373,45 +371,24 @@ impl UserAgentServiceImpl {
             }
         }
 
-        let discovery_time: i64 = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            .try_into()
-            .unwrap();
+        let discovery_time = utils::time::get_current_timestamp();
 
         // Cache discovered hosts locally
         {
-            let peer_base_info: Vec<PeerServerBaseInfoRow> = serial_responses
+            let peer_base_info: Vec<HostsRow> = serial_responses
                 .iter()
-                .map(|info| PeerServerBaseInfoRow {
+                .map(|info| HostsRow {
                     // TODO: Could use only references in this struct, avoiding all the copies
                     uuid: info.uuid.clone(),
                     name: info.name.clone(),
                     hostname: info.hostname.clone(),
-                })
-                .collect();
-
-            self.ctx
-                .db_proxy
-                .save_peer_server_base_info(&peer_base_info)
-                .await;
-        }
-
-        {
-            let peer_addr_info: Vec<PeerAddrV4Row> = serial_responses
-                .iter()
-                .map(|info| PeerAddrV4Row {
-                    uuid: info.uuid.clone(),
+                    is_remote: true,
                     ipv4_addr: info.address.clone(),
                     discovery_time,
                 })
                 .collect();
 
-            self.ctx
-                .db_proxy
-                .save_peer_server_addr_info(&peer_addr_info)
-                .await;
+            self.ctx.db_proxy.insert_hosts(&peer_base_info).await;
         }
 
         Ok(serial_responses)

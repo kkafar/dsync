@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::path::PathBuf;
 
 pub(crate) mod keys {

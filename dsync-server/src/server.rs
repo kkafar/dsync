@@ -11,7 +11,9 @@ use dsync_proto::{
 use global_context::GlobalContext;
 use uuid::Uuid;
 
-use database::models::LocalServerBaseInfoRow;
+use database::models::HostsRow;
+
+use crate::utils;
 
 pub mod config;
 pub mod database;
@@ -38,7 +40,7 @@ impl Server {
 
         let db_proxy = DatabaseProxy::new(connection);
         db_proxy
-            .ensure_db_record_exists(|| self.create_this_server_info("main".to_owned()))
+            .ensure_db_record_exists(|| self.create_this_server_info())
             .await;
 
         let addr_str = format!("0.0.0.0:{}", self.run_config.port);
@@ -68,11 +70,16 @@ impl Server {
         anyhow::Ok(())
     }
 
-    fn create_this_server_info(&self, name: String) -> LocalServerBaseInfoRow {
-        return LocalServerBaseInfoRow {
+    fn create_this_server_info(&self) -> HostsRow {
+        let hostname = self.get_hostname().expect("Error while resolving hostname");
+
+        return HostsRow {
             uuid: Uuid::new_v4().to_string(),
-            name,
-            hostname: self.get_hostname().expect("Error while resolving hostname"),
+            name: hostname.clone(),
+            hostname: hostname,
+            is_remote: false,
+            ipv4_addr: String::from("127.0.0.1"),
+            discovery_time: utils::time::get_current_timestamp(),
         };
     }
 
