@@ -128,14 +128,14 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn fetch_peer_addr_by_uuid(&self, uuid: impl AsRef<str>) -> anyhow::Result<String> {
+    pub async fn fetch_host_by_uuid(&self, uuid: impl AsRef<str>) -> anyhow::Result<HostsRow> {
         use schema::hosts::dsl as ht;
 
         let uuid = uuid.as_ref();
 
         let qr_result = {
             let mut connection = self.conn.lock().await;
-            QueryDsl::filter(ht::hosts, ht::is_remote.eq(true).and(ht::uuid.eq(uuid)))
+            QueryDsl::filter(ht::hosts, ht::uuid.eq(uuid))
                 .select(HostsRow::as_select())
                 .first(connection.deref_mut())
         };
@@ -144,7 +144,7 @@ impl DatabaseProxy {
             anyhow::bail!("Failed to fetch the row");
         };
 
-        return Ok(row.ipv4_addr);
+        return Ok(row);
     }
 
     pub async fn insert_hosts(&self, hosts_rows: &[HostsRow]) {

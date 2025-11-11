@@ -6,8 +6,8 @@ use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::util;
 use crate::utils;
 
-use dsync_proto::file_transfer::TransferInitRequest;
 use dsync_proto::file_transfer::file_transfer_service_client::FileTransferServiceClient;
+use dsync_proto::file_transfer::{TransferInitRequest, TransferSubmitRequest};
 use dsync_proto::server::HelloThereRequest;
 use dsync_proto::server::peer_service_client::PeerServiceClient;
 use dsync_proto::shared;
@@ -180,14 +180,23 @@ impl UserAgentService for UserAgentServiceImpl {
         // Extract destination host information from database basing on characteristic
         let dest_host = &request.destination_host;
 
-        let result = self
+        let server_info_list = self
             .ctx
             .db_proxy
             .fetch_hosts()
             .await
             .expect("TODO: Handle this error");
 
-        let dest_host_info = result
+        // TODO: This should be avilable from fetch above if only the is_remote info would be
+        // accessible.
+        let this_host_server_info = self
+            .ctx
+            .db_proxy
+            .fetch_local_server_info()
+            .await
+            .expect("Failed to fetch local server info");
+
+        let dest_host_info = server_info_list
             .iter()
             .find(|server_info| &server_info.name == dest_host);
 
@@ -196,24 +205,26 @@ impl UserAgentService for UserAgentServiceImpl {
         };
 
         let Ok(mut transfer_client) =
-            FileTransferServiceClient::connect(dest_host_info.address.clone()).await
+            // FIXME: I pass here the port THIS server is running on. This should be the port of
+            // the DestinationHost.
+            FileTransferServiceClient::connect(util::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
         else {
             return Err(tonic::Status::unavailable("remote-server-unavailable"));
         };
 
         let file_path_src = request.source_paths.first().unwrap();
 
-        let transfer_request = TransferInitRequest {
+        let transfer_request = TransferSubmitRequest {
             file_path_src: file_path_src.clone(),
             file_path_dst: request.destination_path,
-            chunk_size: 1024,
-            file_sha1: "hello".to_owned(),
-            file_size_bytes: 1024,
+            host_org_uuid: this_host_server_info.uuid,
+            host_dst_uuid: dest_host_info.uuid.clone(),
         };
 
-        let transfer_response = match transfer_client.transfer_init(transfer_request).await {
+        let _transfer_response = match transfer_client.transfer_submit(transfer_request).await {
             Ok(response) => response.into_inner(),
             Err(status) => {
+                log::trace!("Dest host rejected TransferInitRequest");
                 // TODO: Handle this correctly, instead of forwarding the status
                 return Err(status);
             }
