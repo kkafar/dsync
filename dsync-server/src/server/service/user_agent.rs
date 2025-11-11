@@ -204,14 +204,10 @@ impl UserAgentService for UserAgentServiceImpl {
             return Err(tonic::Status::invalid_argument("server-does-not-exist"));
         };
 
-        let mut dest_host_addr = dest_host_info.address.clone();
-        if !dest_host_addr.contains(":") {
-            dest_host_addr = dest_host_addr + ":" + self.ctx.run_config.port.to_string().as_str();
-        }
-
-        log::trace!("Connecting to FTS at {}", &dest_host_addr);
         let Ok(mut transfer_client) =
-            FileTransferServiceClient::connect("http://127.0.0.1:50051").await
+            // FIXME: I pass here the port THIS server is running on. This should be the port of
+            // the DestinationHost.
+            FileTransferServiceClient::connect(util::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
         else {
             return Err(tonic::Status::unavailable("remote-server-unavailable"));
         };
