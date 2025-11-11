@@ -2,15 +2,15 @@ use std::ops::DerefMut;
 
 use anyhow::Context;
 use diesel::{
-    ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
-    result::DatabaseErrorKind,
+    BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper,
+    SqliteConnection, result::DatabaseErrorKind,
 };
 use dsync_proto::shared;
 
 use error::{FileAddError, LocalServerBaseInfoError, SaveLocalGroupError};
-use models::{
-    LocalFilesWoIdRow, LocalGroupQueryRow, LocalGroupWoIdInsertRow, LocalServerBaseInfoRow,
-    PeerAddrV4Row, PeerServerBaseInfoRow,
+
+use crate::server::database::models::{
+    FilesLocalFragmentInsert, FilesLocalRow, GroupsLocalFragmentInsert, GroupsLocalRow, HostsRow,
 };
 
 pub(crate) mod error;
@@ -30,16 +30,16 @@ impl DatabaseProxy {
 }
 
 impl DatabaseProxy {
-    pub async fn fetch_local_server_info(
-        &self,
-    ) -> Result<LocalServerBaseInfoRow, LocalServerBaseInfoError> {
-        use schema::local_server_base_info::dsl::*;
+    pub async fn fetch_local_server_info(&self) -> Result<HostsRow, LocalServerBaseInfoError> {
+        use schema::hosts::dsl::*;
         let mut db_conn = self.conn.lock().await;
 
-        let results = local_server_base_info
-            .select(LocalServerBaseInfoRow::as_select())
+        let results = QueryDsl::filter(hosts, is_remote.eq(false))
+            .select(HostsRow::as_select())
             .load(db_conn.deref_mut())
             .context("Error while loading configuration");
+
+        std::mem::drop(db_conn);
 
         if let Err(err) = results {
             return Err(LocalServerBaseInfoError::Other(err));
@@ -59,15 +59,12 @@ impl DatabaseProxy {
         return Ok(records.pop().unwrap());
     }
 
-    pub async fn ensure_db_record_exists(
-        &self,
-        server_info_factory: impl FnOnce() -> LocalServerBaseInfoRow,
-    ) {
+    pub async fn ensure_db_record_exists(&self, server_info_factory: impl FnOnce() -> HostsRow) {
         let result = self.fetch_local_server_info().await;
 
         match result {
             Ok(lcl_srv_info) => {
-                log::info!("Server info exists: {:?}", lcl_srv_info);
+                log::info!("Server info exists: {:?}", &lcl_srv_info);
             }
             Err(err) => match err {
                 LocalServerBaseInfoError::InvalidRecordCount(count) => {
@@ -91,44 +88,38 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn save_local_server_info(&self, server_info: LocalServerBaseInfoRow) {
-        use schema::local_server_base_info;
+    pub async fn save_local_server_info(&self, server_info: HostsRow) {
+        use schema::hosts::dsl::*;
 
         log::trace!("Saving local server info");
 
         let mut connection = self.conn.lock().await;
 
-        diesel::insert_into(local_server_base_info::table)
+        diesel::insert_into(hosts)
             .values(&server_info)
             .execute(connection.deref_mut())
             .expect("Failed to insert server info to db");
     }
 
     pub async fn fetch_peer_server_info(&self) -> anyhow::Result<Vec<shared::ServerInfo>> {
-        use schema::peer_addr_v4 as pa;
-        use schema::peer_server_base_info as psbi;
+        use schema::hosts::dsl::*;
 
-        let mut connection = self.conn.lock().await;
+        let qr_result = {
+            let mut connection = self.conn.lock().await;
+            QueryDsl::filter(hosts, is_remote.eq(true))
+                .select(HostsRow::as_select())
+                .load(connection.deref_mut())
+        };
 
-        let query_result = psbi::table
-            .inner_join(pa::table)
-            .select((
-                PeerServerBaseInfoRow::as_select(),
-                PeerAddrV4Row::as_select(),
-            ))
-            .load::<(PeerServerBaseInfoRow, PeerAddrV4Row)>(connection.deref_mut());
-
-        std::mem::drop(connection);
-
-        match query_result {
+        match qr_result {
             Ok(data) => {
                 return Ok(data
                     .into_iter()
-                    .map(|(srv_base_info, srv_addr_info)| shared::ServerInfo {
-                        uuid: srv_base_info.uuid,
-                        name: srv_base_info.name,
-                        hostname: srv_base_info.hostname,
-                        address: srv_addr_info.ipv4_addr,
+                    .map(|host_info| shared::ServerInfo {
+                        uuid: host_info.uuid,
+                        name: host_info.name,
+                        hostname: host_info.hostname,
+                        address: host_info.ipv4_addr,
                     })
                     .collect());
             }
@@ -140,30 +131,29 @@ impl DatabaseProxy {
     }
 
     pub async fn fetch_peer_addr_by_uuid(&self, uuid: impl AsRef<str>) -> anyhow::Result<String> {
-        use schema::peer_addr_v4::dsl as pa;
+        use schema::hosts::dsl as ht;
 
-        let uuid_str = uuid.as_ref();
+        let uuid = uuid.as_ref();
 
-        let mut connection = self.conn.lock().await;
+        let qr_result = {
+            let mut connection = self.conn.lock().await;
+            QueryDsl::filter(ht::hosts, ht::is_remote.eq(true).and(ht::uuid.eq(uuid)))
+                .select(HostsRow::as_select())
+                .first(connection.deref_mut())
+        };
 
-        let query_result = QueryDsl::filter(pa::peer_addr_v4, pa::uuid.eq(uuid_str))
-            .select(PeerAddrV4Row::as_select())
-            .first(connection.deref_mut());
-
-        std::mem::drop(connection);
-
-        let Ok(row) = query_result else {
+        let Ok(row) = qr_result else {
             anyhow::bail!("Failed to fetch the row");
         };
 
         return Ok(row.ipv4_addr);
     }
 
-    pub async fn save_peer_server_base_info(&self, peer_info: &[PeerServerBaseInfoRow]) {
-        use schema::peer_server_base_info as psbi;
+    pub async fn insert_hosts(&self, hosts_rows: &[HostsRow]) {
+        use schema::hosts::dsl as ht;
 
         let mut connection = self.conn.lock().await;
-        let conn_ref_mut = connection.deref_mut();
+        let conn_ref_mut: &mut SqliteConnection = &mut connection;
 
         // There is a weird bug, similar to https://github.com/diesel-rs/diesel/issues/1930
         // but for sqlite db, so that I can not add `on_conflict_do_nothing` and execute this
@@ -173,8 +163,8 @@ impl DatabaseProxy {
         //     .values(peer_info)
         //     .execute(connection.deref_mut())
         //     .expect("Failed to insert peer info to db");
-        for info in peer_info {
-            diesel::insert_into(psbi::table)
+        for info in hosts_rows {
+            diesel::insert_into(ht::hosts)
                 .values(info)
                 .on_conflict_do_nothing()
                 .execute(conn_ref_mut)
@@ -182,26 +172,15 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn save_peer_server_addr_info(&self, peer_addr_info: &[PeerAddrV4Row]) {
-        use schema::peer_addr_v4 as pa;
+    pub async fn save_local_file(
+        &self,
+        local_file: FilesLocalFragmentInsert,
+    ) -> Result<(), FileAddError> {
+        use schema::files_local as fl;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = connection.deref_mut();
-        for info in peer_addr_info {
-            diesel::insert_into(pa::table)
-                .values(info)
-                .on_conflict_do_nothing()
-                .execute(conn_ref_mut)
-                .expect("Failed to insert peer addr info to db");
-        }
-    }
-
-    pub async fn save_local_file(&self, local_file: LocalFilesWoIdRow) -> Result<(), FileAddError> {
-        use schema::local_files as lf;
-
-        let mut connection = self.conn.lock().await;
-        let conn_ref_mut = connection.deref_mut();
-        match diesel::insert_into(lf::table)
+        match diesel::insert_into(fl::table)
             .values(&local_file)
             .execute(conn_ref_mut)
         {
@@ -218,14 +197,14 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn fetch_local_files(&self) -> anyhow::Result<Vec<models::LocalFilesRow>> {
-        use schema::local_files as lf;
+    pub async fn fetch_local_files(&self) -> anyhow::Result<Vec<FilesLocalRow>> {
+        use schema::files_local as fl;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = connection.deref_mut();
 
-        let result = lf::table
-            .select(models::LocalFilesRow::as_select())
+        let result = fl::table
+            .select(FilesLocalRow::as_select())
             .load(conn_ref_mut)
             .context("Failed to fetch local files from db")?;
 
@@ -233,25 +212,29 @@ impl DatabaseProxy {
     }
 
     pub async fn delete_local_file(&self, file_path: &str) -> anyhow::Result<usize> {
-        use schema::local_files as lf;
+        use schema::files_local::dsl as fl;
 
         let mut connection = self.conn.lock().await;
         let conn_ref_mut = &mut *connection;
 
-        let result = diesel::delete(lf::table)
-            .filter(lf::dsl::file_path.eq(file_path))
+        let result = diesel::delete(fl::files_local)
+            .filter(fl::file_path.eq(file_path))
             .execute(conn_ref_mut)?;
 
         anyhow::Ok(result)
     }
 
     pub async fn save_local_group(&self, group_id: &str) -> Result<usize, SaveLocalGroupError> {
-        use schema::local_groups as lg;
+        use schema::groups_local as gl;
 
         let mut connection = self.conn.lock().await;
-        let result = diesel::insert_into(lg::table)
-            .values(LocalGroupWoIdInsertRow { name: group_id })
+        let result = diesel::insert_into(gl::table)
+            .values(GroupsLocalFragmentInsert {
+                name: group_id.to_owned(),
+            })
             .execute(&mut *connection);
+
+        std::mem::drop(connection);
 
         match result {
             Ok(aff_rows) => Ok(aff_rows),
@@ -270,12 +253,14 @@ impl DatabaseProxy {
     }
 
     pub async fn fetch_local_groups(&self) -> Result<Vec<shared::GroupInfo>, anyhow::Error> {
-        use schema::local_groups as lg;
+        use schema::groups_local as gl;
 
         let mut connection = self.conn.lock().await;
-        let result = lg::table
-            .select(LocalGroupQueryRow::as_select())
-            .load::<LocalGroupQueryRow>(&mut *connection)?;
+        let result = gl::table
+            .select(GroupsLocalRow::as_select())
+            .load(&mut *connection)?;
+
+        std::mem::drop(connection);
 
         Ok(result
             .into_iter()

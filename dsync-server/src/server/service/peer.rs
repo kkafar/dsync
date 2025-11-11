@@ -4,7 +4,7 @@ use dsync_proto::shared;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
-use crate::server::database::models::LocalServerBaseInfoRow;
+use crate::server::database::models::HostsRow;
 use crate::server::global_context::GlobalContext;
 
 // #[derive(Debug)]
@@ -17,7 +17,7 @@ impl PeerServiceImpl {
         Self { ctx }
     }
 
-    async fn retrieve_local_server_info(&self) -> anyhow::Result<LocalServerBaseInfoRow> {
+    async fn retrieve_local_server_info(&self) -> anyhow::Result<HostsRow> {
         anyhow::Ok(self.ctx.db_proxy.fetch_local_server_info().await?)
     }
 }

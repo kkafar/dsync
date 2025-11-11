@@ -10,7 +10,7 @@ diesel::table! {
 
 diesel::table! {
     files_tracked (local_id) {
-        local_id -> Nullable<Integer>,
+        local_id -> Integer,
         peer_uuid -> Text,
         remote_id -> Integer,
     }
@@ -35,13 +35,13 @@ diesel::table! {
         uuid -> Text,
         name -> Text,
         hostname -> Text,
-        #[sql_name = "type"]
-        type_ -> Text,
+        is_remote -> Bool,
         ipv4_addr -> Text,
         discovery_time -> BigInt,
     }
 }
 
+diesel::joinable!(files_tracked -> files_local (local_id));
 diesel::joinable!(group_files_local -> files_local (file_id));
 diesel::joinable!(group_files_local -> groups_local (group_id));
 
