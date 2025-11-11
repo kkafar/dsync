@@ -126,9 +126,9 @@ pub(crate) async fn file_list(
 
 pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Result<()> {
     let request = tonic::Request::new(FileCopyRequest {
-        source_host: String::from("localhost"),
-        destination_host: String::from("localhost"),
-        source_paths: Vec::new(),
+        source_host: String::from("dynamo-pc"),
+        destination_host: String::from("dynamo-pc"),
+        source_paths: vec![source],
         destination_path: destination,
     });
 

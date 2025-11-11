@@ -10,6 +10,7 @@ use std::{
     sync::Arc,
 };
 
+use async_stream::stream;
 use dsync_proto::file_transfer::{
     TransferChunkRequest, TransferChunkResponse, TransferInitRequest, TransferInitResponse,
     TransferSubmitRequest, TransferSubmitResponse,
@@ -18,10 +19,10 @@ use dsync_proto::file_transfer::{
 };
 use tokio::{
     fs::{File, OpenOptions, metadata},
-    io::{AsyncWriteExt, BufWriter},
+    io::{AsyncRead, AsyncReadExt, AsyncWriteExt, BufWriter},
 };
 use tokio_stream::StreamExt;
-use tonic::IntoRequest;
+use tonic::{IntoRequest, transport::Channel};
 
 use crate::server::{
     global_context::GlobalContext,
@@ -56,6 +57,7 @@ impl FileTransferService for FileTransferServiceImpl {
         &self,
         request: tonic::Request<TransferSubmitRequest>,
     ) -> Result<tonic::Response<TransferSubmitResponse>, tonic::Status> {
+        log::trace!("Received TransferSubmitRequest");
         // Here we received request to transfer a file from this server, to another one pointed
         // by the request.
         // We need to:
@@ -100,34 +102,38 @@ impl FileTransferService for FileTransferServiceImpl {
         // Step 3
         // Send init message to destination host
         // FIXME: This does not work in case local host is specified.
-        let Ok(host_dst_addr) = self
+        let Ok(host_data) = self
             .global_ctx
             .db_proxy
-            .fetch_peer_addr_by_uuid(&request_inner.host_dst_uuid)
+            .fetch_host_by_uuid(&request_inner.host_dst_uuid)
             .await
         else {
             return Err(tonic::Status::internal("host-dst-addr-missing"));
         };
 
         // FIXME: host_dst_addr most likely does not have port information attached
-        let Ok(mut fts_client) = FileTransferServiceClient::connect(host_dst_addr).await else {
+        let Ok(mut fts_client) = FileTransferServiceClient::connect(
+            util::ipv4_into_connection_addr(&host_data.ipv4_addr, 50051),
+        )
+        .await
+        else {
             return Err(tonic::Status::failed_precondition("fts-connection-fail"));
         };
 
-        let result = fts_client
-            .transfer_init(TransferInitRequest {
-                file_path_src: request_inner.file_path_src,
-                file_path_dst: request_inner.file_path_dst,
-                file_sha1: file_sha1,
-                file_size_bytes: file_size_bytes,
-                chunk_size: 1024,
-            })
-            .await;
+        let transfer_request = TransferInitRequest {
+            file_path_src: request_inner.file_path_src,
+            file_path_dst: request_inner.file_path_dst,
+            file_sha1: file_sha1,
+            file_size_bytes: file_size_bytes,
+            chunk_size: 1024,
+        };
 
-        let transfer_session_id = match result {
+        let result = fts_client.transfer_init(transfer_request.clone()).await;
+
+        let transfer_init_response = match result {
             Ok(response) => {
                 let response = response.into_inner();
-                response.session_id
+                response
             }
             Err(status) => {
                 // log::error!(format!("FTS at {} rejected transfer request: {}", &request_inner.host_dst_uuid, status));
@@ -137,14 +143,11 @@ impl FileTransferService for FileTransferServiceImpl {
 
         // Step 4
         // Schedule data transfer
-        tokio::spawn(async move {
-            // TODO: Do data transfer here
-            fts_client.transfer_chunk(tokio_stream::iter(vec![TransferChunkRequest {
-                session_id: transfer_session_id,
-                chunk_id: 0,
-                data_buffer: Vec::new(),
-            }]));
-        });
+        tokio::spawn(Self::transfer_file_impl(
+            fts_client,
+            transfer_request,
+            transfer_init_response,
+        ));
 
         Ok(tonic::Response::new(TransferSubmitResponse {}))
     }
@@ -153,6 +156,7 @@ impl FileTransferService for FileTransferServiceImpl {
         &self,
         request: tonic::Request<TransferInitRequest>,
     ) -> Result<tonic::Response<TransferInitResponse>, tonic::Status> {
+        log::trace!("Received TransferInitRequest");
         // This message means that some other server (or the very same) wants to tranfser file
         // to us.
         // We need to either decline the request & provide a reason,
@@ -181,6 +185,7 @@ impl FileTransferService for FileTransferServiceImpl {
         &self,
         request_stream: tonic::Request<tonic::Streaming<TransferChunkRequest>>,
     ) -> Result<tonic::Response<TransferChunkResponse>, tonic::Status> {
+        log::trace!("Received TransferChunkRequest");
         let mut stream = request_stream.into_inner().peekable();
 
         let first_chunk = stream.peek().await.unwrap().as_ref().unwrap();
@@ -215,15 +220,15 @@ impl FileTransferService for FileTransferServiceImpl {
 
                     // let data_buf = bytes
 
-                    assert_eq!(
-                        payload.data_buffer.len(),
-                        session.transfer_init_request.chunk_size as usize
+                    log::debug!("Received chunk of size: {}", payload.data_buffer.len());
+                    assert!(
+                        payload.data_buffer.len()
+                            <= session.transfer_init_request.chunk_size as usize
                     );
-                    self.write_chunk_to_file(&mut writer, payload.data_buffer);
+                    self.write_chunk_to_file(&mut writer, payload.data_buffer)
+                        .await;
                 }
-                Err(status) => {
-                    // TODO: Handle error
-                }
+                Err(status) => {} // TODO: Handle error
             }
         }
 
@@ -238,14 +243,60 @@ impl FileTransferService for FileTransferServiceImpl {
 
 impl FileTransferServiceImpl {
     async fn write_chunk_to_file(&self, writer: &mut BufWriter<File>, data_buf: Vec<u8>) {
+        if data_buf.is_empty() {
+            log::debug!("Return because buffer is empty");
+            return;
+        }
+
         let n_bytes = data_buf.len();
         let mut n_bytes_written = 0usize;
 
+        log::debug!("Write to buffer - start");
         while let Ok(write_size) = writer.write_buf(&mut data_buf.as_ref()).await {
+            log::debug!("Wrote {} bytes", write_size);
             n_bytes_written += write_size;
             if n_bytes_written >= n_bytes {
                 break;
             }
         }
+    }
+
+    async fn transfer_file_impl(
+        mut client: FileTransferServiceClient<Channel>,
+        init_request: TransferInitRequest,
+        init_response: TransferInitResponse,
+    ) {
+        log::trace!("Sending TransferChunkRequest");
+
+        let file_path = PathBuf::from(&init_request.file_path_src);
+
+        debug_assert!(file_path.is_file());
+
+        let mut file_handle = OpenOptions::new()
+            .read(true)
+            .open(&file_path)
+            .await
+            .expect("Failed to open the file");
+
+        let mut buffer = bytes::BytesMut::with_capacity(init_request.chunk_size as usize);
+
+        let stream = stream! {
+            let mut chunk_id = 0;
+            while let Some(read_count) = file_handle.read_buf(&mut buffer).await.ok() {
+                if read_count == 0 {
+                    break;
+                } else {
+                    yield TransferChunkRequest {
+                        session_id: init_response.session_id,
+                        chunk_id: chunk_id,
+                        data_buffer: buffer.to_vec(), // FIXME: WE COPY HERE HARD
+                    };
+                    chunk_id += 1;
+                    buffer.clear();
+                }
+            }
+        };
+
+        client.transfer_chunk(stream).await;
     }
 }
