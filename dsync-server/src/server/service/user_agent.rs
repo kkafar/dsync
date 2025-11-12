@@ -6,8 +6,8 @@ use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::util;
 use crate::utils;
 
+use dsync_proto::file_transfer::TransferSubmitRequest;
 use dsync_proto::file_transfer::file_transfer_service_client::FileTransferServiceClient;
-use dsync_proto::file_transfer::{TransferInitRequest, TransferSubmitRequest};
 use dsync_proto::server::HelloThereRequest;
 use dsync_proto::server::peer_service_client::PeerServiceClient;
 use dsync_proto::shared;
