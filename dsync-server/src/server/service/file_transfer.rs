@@ -11,7 +11,7 @@ use std::{
 };
 
 use async_stream::stream;
-use dsync_proto::file_transfer::{
+use dsync_proto::services::file_transfer::{
     TransferChunkRequest, TransferChunkResponse, TransferInitRequest, TransferInitResponse,
     TransferSubmitRequest, TransferSubmitResponse,
     file_transfer_service_client::FileTransferServiceClient,
@@ -101,7 +101,6 @@ impl FileTransferService for FileTransferServiceImpl {
 
         // Step 3
         // Send init message to destination host
-        // FIXME: This does not work in case local host is specified.
         let Ok(host_data) = self
             .global_ctx
             .db_proxy

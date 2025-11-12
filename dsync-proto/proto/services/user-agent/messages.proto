@@ -1,17 +1,8 @@
 syntax = "proto3";
-package user_agent;
+package services.user_agent;
 
-import "shared-defs.proto";
-
-message LocalFileDescription {
-  string local_id = 1;
-  string file_path = 2;
-  string hash_sha1 = 3;
-}
-
-message ListLocalFilesRequest {}
-
-message ListLocalFilesResponse { repeated LocalFileDescription file_descs = 1; }
+import "model/server.proto";
+import "model/common.proto";
 
 message FileAddRequest {
   string file_path = 1;
@@ -32,7 +23,9 @@ message FileListRequest {
   optional string group_id = 2;
 }
 
-message FileListResponse { repeated LocalFileDescription file_list = 1; }
+message FileListResponse {
+  repeated model.common.LocalFileDescription file_list = 1;
+}
 
 message FileCopyRequest {
   string source_host = 1;
@@ -45,11 +38,11 @@ message FileCopyResponse {}
 
 message HostListRequest { bool discover = 1; }
 
-message HostListResponse { repeated shared.ServerInfo host_list = 1; }
+message HostListResponse { repeated model.server.HostInfo host_list = 1; }
 
 message HostDiscoverRequest {}
 
-message HostDiscoverResponse { repeated shared.ServerInfo host_list = 1; }
+message HostDiscoverResponse { repeated model.server.HostInfo host_list = 1; }
 
 message GroupCreateRequest { string group_id = 1; }
 
@@ -61,4 +54,4 @@ message GroupDeleteResponse {}
 
 message GroupListRequest { optional string remote_id = 1; }
 
-message GroupListResponse { repeated shared.GroupInfo group_list = 1; }
+message GroupListResponse { repeated model.server.GroupInfo group_list = 1; }

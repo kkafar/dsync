@@ -1,0 +1,8 @@
+syntax = "proto3";
+package model.common;
+
+message LocalFileDescription {
+  string local_id = 1;
+  string file_path = 2;
+  string hash_sha1 = 3;
+}

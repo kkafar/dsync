@@ -1,0 +1,11 @@
+syntax = "proto3";
+package services.host_discovery;
+
+import "services/host-discovery/messages.proto";
+
+service HostDiscoveryService {
+  // Host discovery. Peer sends HelloThere message
+  // with its own host info & on successful response
+  // expects host info.
+  rpc HelloThere(HelloThereRequest) returns (GeneralKenobiResponse);
+}

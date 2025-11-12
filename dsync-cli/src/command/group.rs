@@ -1,5 +1,5 @@
 use anyhow::{Context, bail};
-use dsync_proto::user_agent::{
+use dsync_proto::services::user_agent::{
     GroupCreateRequest, GroupListRequest, user_agent_service_client::UserAgentServiceClient,
 };
 

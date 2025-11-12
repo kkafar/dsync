@@ -1,5 +1,5 @@
 syntax = "proto3";
-package filetransfer;
+package services.file_transfer;
 
 message TransferSubmitFileMetadata {}
 

@@ -1,6 +1,6 @@
-use dsync_proto::server::peer_service_server::PeerService;
-use dsync_proto::server::{HelloThereRequest, HelloThereResponse};
-use dsync_proto::shared;
+use dsync_proto::model::server::HostInfo;
+use dsync_proto::services::host_discovery::host_discovery_service_server::HostDiscoveryService;
+use dsync_proto::services::host_discovery::{GeneralKenobiResponse, HelloThereRequest};
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
@@ -8,11 +8,11 @@ use crate::server::database::models::HostsRow;
 use crate::server::global_context::GlobalContext;
 
 // #[derive(Debug)]
-pub struct PeerServiceImpl {
+pub struct HostDiscoveryServiceImpl {
     ctx: Arc<GlobalContext>,
 }
 
-impl PeerServiceImpl {
+impl HostDiscoveryServiceImpl {
     pub fn new(ctx: Arc<GlobalContext>) -> Self {
         Self { ctx }
     }
@@ -23,14 +23,14 @@ impl PeerServiceImpl {
 }
 
 #[tonic::async_trait]
-impl PeerService for PeerServiceImpl {
+impl HostDiscoveryService for HostDiscoveryServiceImpl {
     async fn hello_there(
         &self,
         request: Request<HelloThereRequest>,
-    ) -> Result<Response<HelloThereResponse>, Status> {
+    ) -> Result<Response<GeneralKenobiResponse>, Status> {
         log::info!(target: "pslog", "Received hello_there rpc");
 
-        let Some(peer_info) = request.into_inner().server_info else {
+        let Some(peer_info) = request.into_inner().host_info else {
             log::trace!(target: "pslog", "Rejecting request due to missing peer info");
             return Err(tonic::Status::invalid_argument("Missing peer info"));
         };
@@ -47,8 +47,8 @@ impl PeerService for PeerServiceImpl {
             }
         };
 
-        Ok(Response::new(HelloThereResponse {
-            server_info: Some(shared::ServerInfo {
+        Ok(Response::new(GeneralKenobiResponse {
+            host_info: Some(HostInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,

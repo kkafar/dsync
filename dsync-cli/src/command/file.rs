@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::command::utils;
 use anyhow::Context;
-use dsync_proto::user_agent::{
+use dsync_proto::services::user_agent::{
     FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
     user_agent_service_client::UserAgentServiceClient,
 };

@@ -1,0 +1,8 @@
+syntax = "proto3";
+package services.host_discovery;
+
+import "model/server.proto";
+
+message HelloThereRequest { model.server.HostInfo host_info = 1; }
+
+message GeneralKenobiResponse { model.server.HostInfo host_info = 1; }

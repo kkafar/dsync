@@ -1,4 +1,4 @@
-use dsync_proto::file_transfer::TransferInitRequest;
+use dsync_proto::services::file_transfer::TransferInitRequest;
 
 use crate::server::service::file_transfer::session::{FileTransferSession, SessionId};
 

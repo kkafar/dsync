@@ -6,18 +6,19 @@ use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::util;
 use crate::utils;
 
-use dsync_proto::file_transfer::file_transfer_service_client::FileTransferServiceClient;
-use dsync_proto::file_transfer::{TransferInitRequest, TransferSubmitRequest};
-use dsync_proto::server::HelloThereRequest;
-use dsync_proto::server::peer_service_client::PeerServiceClient;
-use dsync_proto::shared;
-use dsync_proto::user_agent::user_agent_service_server::UserAgentService;
-use dsync_proto::user_agent::{
+use dsync_proto::model::common::LocalFileDescription;
+use dsync_proto::model::server::HostInfo;
+use dsync_proto::services::file_transfer::TransferSubmitRequest;
+use dsync_proto::services::file_transfer::file_transfer_service_client::FileTransferServiceClient;
+use dsync_proto::services::host_discovery::HelloThereRequest;
+use dsync_proto::services::host_discovery::host_discovery_service_client::HostDiscoveryServiceClient;
+use dsync_proto::services::user_agent::user_agent_service_server::UserAgentService;
+use dsync_proto::services::user_agent::{
     FileAddRequest, FileAddResponse, FileCopyRequest, FileCopyResponse, FileListRequest,
     FileListResponse, FileRemoveRequest, FileRemoveResponse, GroupCreateRequest,
     GroupCreateResponse, GroupDeleteRequest, GroupDeleteResponse, GroupListRequest,
     GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
-    HostListResponse, LocalFileDescription,
+    HostListResponse,
 };
 use tonic::{Request, Response, Status};
 
@@ -313,22 +314,24 @@ impl UserAgentService for UserAgentServiceImpl {
 }
 
 impl UserAgentServiceImpl {
-    async fn check_hello(&self, ipv4_addr: &str) -> Option<shared::ServerInfo> {
+    async fn check_hello(&self, ipv4_addr: &str) -> Option<HostInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
-        let mut client_conn = match PeerServiceClient::connect(remote_service_socket.clone()).await
-        {
-            Ok(conn) => conn,
-            Err(error) => {
-                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
-                return None;
-            }
-        };
+        let mut client_conn =
+            match HostDiscoveryServiceClient::connect(remote_service_socket.clone()).await {
+                Ok(conn) => conn,
+                Err(error) => {
+                    log::debug!(
+                        "Failed to connect with {remote_service_socket} with error: {error}"
+                    );
+                    return None;
+                }
+            };
 
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
-            server_info: Some(shared::ServerInfo {
+            host_info: Some(HostInfo {
                 uuid: server_info.uuid,
                 name: server_info.name,
                 hostname: server_info.hostname,
@@ -338,7 +341,7 @@ impl UserAgentServiceImpl {
 
         let response = client_conn.hello_there(request).await.ok()?.into_inner();
 
-        let Some(mut remote_server_info) = response.server_info else {
+        let Some(mut remote_server_info) = response.host_info else {
             log::warn!(target: "pslog", "Invalid response from peer, server info must not be none");
             return None;
         };
@@ -354,7 +357,7 @@ impl UserAgentServiceImpl {
         Some(remote_server_info)
     }
 
-    async fn host_discovery_impl(&self) -> Result<Vec<shared::ServerInfo>, Status> {
+    async fn host_discovery_impl(&self) -> Result<Vec<HostInfo>, Status> {
         // TODO: this could be done once, on server start.
         if !utils::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
@@ -370,7 +373,7 @@ impl UserAgentServiceImpl {
             ));
         };
 
-        let mut serial_responses: Vec<shared::ServerInfo> = Vec::new();
+        let mut serial_responses: Vec<HostInfo> = Vec::new();
 
         // This could be definitely improved, however it's fine for now.
         for addr in ipv4_addrs.iter() {
