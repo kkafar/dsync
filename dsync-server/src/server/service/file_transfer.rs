@@ -101,7 +101,6 @@ impl FileTransferService for FileTransferServiceImpl {
 
         // Step 3
         // Send init message to destination host
-        // FIXME: This does not work in case local host is specified.
         let Ok(host_data) = self
             .global_ctx
             .db_proxy
