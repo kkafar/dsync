@@ -8,17 +8,20 @@ use crate::utils;
 
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
-use dsync_proto::services::file_transfer::TransferSubmitRequest;
-use dsync_proto::services::file_transfer::file_transfer_service_client::FileTransferServiceClient;
-use dsync_proto::services::host_discovery::HelloThereRequest;
-use dsync_proto::services::host_discovery::host_discovery_service_client::HostDiscoveryServiceClient;
-use dsync_proto::services::user_agent::user_agent_service_server::UserAgentService;
-use dsync_proto::services::user_agent::{
-    FileAddRequest, FileAddResponse, FileCopyRequest, FileCopyResponse, FileListRequest,
-    FileListResponse, FileRemoveRequest, FileRemoveResponse, GroupCreateRequest,
-    GroupCreateResponse, GroupDeleteRequest, GroupDeleteResponse, GroupListRequest,
-    GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
-    HostListResponse,
+use dsync_proto::services::{
+    file_transfer::{
+        TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
+    },
+    host_discovery::{
+        HelloThereRequest, host_discovery_service_client::HostDiscoveryServiceClient,
+    },
+    user_agent::{
+        FileAddRequest, FileAddResponse, FileCopyRequest, FileCopyResponse, FileListRequest,
+        FileListResponse, FileRemoveRequest, FileRemoveResponse, GroupCreateRequest,
+        GroupCreateResponse, GroupDeleteRequest, GroupDeleteResponse, GroupListRequest,
+        GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
+        HostListResponse, user_agent_service_server::UserAgentService,
+    },
 };
 use tonic::{Request, Response, Status};
 
