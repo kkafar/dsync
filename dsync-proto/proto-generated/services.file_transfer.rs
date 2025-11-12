@@ -166,12 +166,15 @@ pub mod file_transfer_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/filetransfer.FileTransferService/TransferSubmit",
+                "/services.file_transfer.FileTransferService/TransferSubmit",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("filetransfer.FileTransferService", "TransferSubmit"),
+                    GrpcMethod::new(
+                        "services.file_transfer.FileTransferService",
+                        "TransferSubmit",
+                    ),
                 );
             self.inner.unary(req, path, codec).await
         }
@@ -195,12 +198,15 @@ pub mod file_transfer_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/filetransfer.FileTransferService/TransferInit",
+                "/services.file_transfer.FileTransferService/TransferInit",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("filetransfer.FileTransferService", "TransferInit"),
+                    GrpcMethod::new(
+                        "services.file_transfer.FileTransferService",
+                        "TransferInit",
+                    ),
                 );
             self.inner.unary(req, path, codec).await
         }
@@ -228,12 +234,15 @@ pub mod file_transfer_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/filetransfer.FileTransferService/TransferChunk",
+                "/services.file_transfer.FileTransferService/TransferChunk",
             );
             let mut req = request.into_streaming_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("filetransfer.FileTransferService", "TransferChunk"),
+                    GrpcMethod::new(
+                        "services.file_transfer.FileTransferService",
+                        "TransferChunk",
+                    ),
                 );
             self.inner.client_streaming(req, path, codec).await
         }
@@ -361,7 +370,7 @@ pub mod file_transfer_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/filetransfer.FileTransferService/TransferSubmit" => {
+                "/services.file_transfer.FileTransferService/TransferSubmit" => {
                     #[allow(non_camel_case_types)]
                     struct TransferSubmitSvc<T: FileTransferService>(pub Arc<T>);
                     impl<
@@ -407,7 +416,7 @@ pub mod file_transfer_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/filetransfer.FileTransferService/TransferInit" => {
+                "/services.file_transfer.FileTransferService/TransferInit" => {
                     #[allow(non_camel_case_types)]
                     struct TransferInitSvc<T: FileTransferService>(pub Arc<T>);
                     impl<
@@ -453,7 +462,7 @@ pub mod file_transfer_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/filetransfer.FileTransferService/TransferChunk" => {
+                "/services.file_transfer.FileTransferService/TransferChunk" => {
                     #[allow(non_camel_case_types)]
                     struct TransferChunkSvc<T: FileTransferService>(pub Arc<T>);
                     impl<
@@ -536,7 +545,7 @@ pub mod file_transfer_service_server {
         }
     }
     /// Generated gRPC service name
-    pub const SERVICE_NAME: &str = "filetransfer.FileTransferService";
+    pub const SERVICE_NAME: &str = "services.file_transfer.FileTransferService";
     impl<T> tonic::server::NamedService for FileTransferServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }

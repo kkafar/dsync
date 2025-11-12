@@ -1,21 +1,10 @@
 syntax = "proto3";
-package user_agent;
+package services.user_agent;
 
-import "user-agent-defs.proto";
-import "shared-defs.proto";
+import "services/user-agent/messages.proto";
 
-message ListHostsRequest {}
-
-message ListHostsResponse { repeated shared.ServerInfo servers_info = 1; }
-
-message DiscoverHostsRequest {}
-
-message DiscoverHostsResponse { repeated shared.ServerInfo servers_info = 1; }
-
-message AddFileRequest { repeated string file_path = 1; }
-
-message AddFileResponse {}
-
+// Communication between UserAgent (e.g. CLI tool) and local
+// server instance.
 service UserAgentService {
   // File related methods
 

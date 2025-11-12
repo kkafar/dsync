@@ -11,7 +11,7 @@ use std::{
 };
 
 use async_stream::stream;
-use dsync_proto::file_transfer::{
+use dsync_proto::services::file_transfer::{
     TransferChunkRequest, TransferChunkResponse, TransferInitRequest, TransferInitResponse,
     TransferSubmitRequest, TransferSubmitResponse,
     file_transfer_service_client::FileTransferServiceClient,

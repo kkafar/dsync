@@ -1,8 +1,0 @@
-syntax = "proto3";
-package server;
-
-import "shared-defs.proto";
-
-message HelloThereRequest { shared.ServerInfo server_info = 1; }
-
-message HelloThereResponse { shared.ServerInfo server_info = 1; }

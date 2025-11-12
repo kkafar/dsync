@@ -1,7 +1,10 @@
-use dsync_proto::{shared, user_agent};
+use dsync_proto::model::{
+    common::LocalFileDescription,
+    server::{GroupInfo, HostInfo},
+};
 use prettytable::row;
 
-pub(super) fn print_servers_info(server_info_coll: &[shared::ServerInfo]) -> () {
+pub(super) fn print_servers_info(server_info_coll: &[HostInfo]) -> () {
     use prettytable as pt;
 
     let mut table = pt::Table::new();
@@ -17,7 +20,7 @@ pub(super) fn print_servers_info(server_info_coll: &[shared::ServerInfo]) -> () 
     table.printstd();
 }
 
-pub(super) fn print_local_files_desc(file_descs: &[user_agent::LocalFileDescription]) -> () {
+pub(super) fn print_local_files_desc(file_descs: &[LocalFileDescription]) -> () {
     use prettytable as pt;
 
     let mut table = pt::Table::new();
@@ -31,7 +34,7 @@ pub(super) fn print_local_files_desc(file_descs: &[user_agent::LocalFileDescript
     table.printstd();
 }
 
-pub(super) fn print_local_group_info(group_list: &[shared::GroupInfo]) {
+pub(super) fn print_local_group_info(group_list: &[GroupInfo]) {
     use prettytable as pt;
 
     let mut table = pt::Table::new();

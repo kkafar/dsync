@@ -3,9 +3,9 @@ use std::{process::Command, sync::Arc};
 use config::RunConfiguration;
 use database::DatabaseProxy;
 use diesel::{Connection, SqliteConnection};
-use dsync_proto::{
+use dsync_proto::services::{
     file_transfer::file_transfer_service_server::FileTransferServiceServer,
-    server::peer_service_server::PeerServiceServer,
+    host_discovery::host_discovery_service_server::HostDiscoveryServiceServer,
     user_agent::user_agent_service_server::UserAgentServiceServer,
 };
 use global_context::GlobalContext;
@@ -54,7 +54,8 @@ impl Server {
 
         let user_agent_service_instance =
             service::user_agent::UserAgentServiceImpl::new(g_ctx.clone());
-        let peer_service_instance = service::peer::PeerServiceImpl::new(g_ctx.clone());
+        let peer_service_instance =
+            service::host_discovery::HostDiscoveryServiceImpl::new(g_ctx.clone());
         let file_transfer_service =
             service::file_transfer::FileTransferServiceImpl::new(g_ctx.clone());
 
@@ -62,7 +63,7 @@ impl Server {
 
         tonic::transport::Server::builder()
             .add_service(UserAgentServiceServer::new(user_agent_service_instance))
-            .add_service(PeerServiceServer::new(peer_service_instance))
+            .add_service(HostDiscoveryServiceServer::new(peer_service_instance))
             .add_service(FileTransferServiceServer::new(file_transfer_service))
             .serve(addr)
             .await?;

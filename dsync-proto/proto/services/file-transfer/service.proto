@@ -1,7 +1,7 @@
 syntax = "proto3";
-package filetransfer;
+package services.file_transfer;
 
-import "file-transfer/messages.proto";
+import "services/file-transfer/messages.proto";
 
 service FileTransferService {
   /**

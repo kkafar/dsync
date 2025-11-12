@@ -1,4 +1,4 @@
-use dsync_proto::file_transfer::TransferInitRequest;
+use dsync_proto::services::file_transfer::TransferInitRequest;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct SessionId(pub i32);

@@ -1,5 +1,5 @@
 use anyhow::Context;
-use dsync_proto::user_agent::{
+use dsync_proto::services::user_agent::{
     HostDiscoverRequest, HostListRequest, user_agent_service_client::UserAgentServiceClient,
 };
 

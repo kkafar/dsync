@@ -2,10 +2,10 @@ use std::ops::DerefMut;
 
 use anyhow::Context;
 use diesel::{
-    BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper,
-    SqliteConnection, result::DatabaseErrorKind,
+    ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
+    result::DatabaseErrorKind,
 };
-use dsync_proto::shared;
+use dsync_proto::model::server::{GroupInfo, HostInfo};
 
 use error::{FileAddError, LocalServerBaseInfoError, SaveLocalGroupError};
 
@@ -101,7 +101,7 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
-    pub async fn fetch_hosts(&self) -> anyhow::Result<Vec<shared::ServerInfo>> {
+    pub async fn fetch_hosts(&self) -> anyhow::Result<Vec<HostInfo>> {
         use schema::hosts::dsl::*;
 
         let qr_result = {
@@ -113,7 +113,7 @@ impl DatabaseProxy {
             Ok(data) => {
                 return Ok(data
                     .into_iter()
-                    .map(|host_info| shared::ServerInfo {
+                    .map(|host_info| HostInfo {
                         uuid: host_info.uuid,
                         name: host_info.name,
                         hostname: host_info.hostname,
@@ -250,7 +250,7 @@ impl DatabaseProxy {
         }
     }
 
-    pub async fn fetch_local_groups(&self) -> Result<Vec<shared::GroupInfo>, anyhow::Error> {
+    pub async fn fetch_local_groups(&self) -> Result<Vec<GroupInfo>, anyhow::Error> {
         use schema::groups_local as gl;
 
         let mut connection = self.conn.lock().await;
@@ -262,7 +262,7 @@ impl DatabaseProxy {
 
         Ok(result
             .into_iter()
-            .map(|row| shared::GroupInfo {
+            .map(|row| GroupInfo {
                 local_id: row.id,
                 name: row.name,
             })

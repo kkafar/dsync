@@ -2,15 +2,15 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct HelloThereRequest {
     #[prost(message, optional, tag = "1")]
-    pub server_info: ::core::option::Option<super::shared::ServerInfo>,
+    pub host_info: ::core::option::Option<super::super::model::server::HostInfo>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HelloThereResponse {
+pub struct GeneralKenobiResponse {
     #[prost(message, optional, tag = "1")]
-    pub server_info: ::core::option::Option<super::shared::ServerInfo>,
+    pub host_info: ::core::option::Option<super::super::model::server::HostInfo>,
 }
 /// Generated client implementations.
-pub mod peer_service_client {
+pub mod host_discovery_service_client {
     #![allow(
         unused_variables,
         dead_code,
@@ -21,10 +21,10 @@ pub mod peer_service_client {
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
-    pub struct PeerServiceClient<T> {
+    pub struct HostDiscoveryServiceClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl PeerServiceClient<tonic::transport::Channel> {
+    impl HostDiscoveryServiceClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -35,7 +35,7 @@ pub mod peer_service_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> PeerServiceClient<T>
+    impl<T> HostDiscoveryServiceClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::Body>,
         T::Error: Into<StdError>,
@@ -53,7 +53,7 @@ pub mod peer_service_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> PeerServiceClient<InterceptedService<T, F>>
+        ) -> HostDiscoveryServiceClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -67,7 +67,7 @@ pub mod peer_service_client {
                 http::Request<tonic::body::Body>,
             >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
-            PeerServiceClient::new(InterceptedService::new(inner, interceptor))
+            HostDiscoveryServiceClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -100,14 +100,14 @@ pub mod peer_service_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        /// Service discovery. Peer sends HelloThere message
-        /// with its own server info & on successful response
-        /// expects peer server info.
+        /// Host discovery. Peer sends HelloThere message
+        /// with its own host info & on successful response
+        /// expects host info.
         pub async fn hello_there(
             &mut self,
             request: impl tonic::IntoRequest<super::HelloThereRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::HelloThereResponse>,
+            tonic::Response<super::GeneralKenobiResponse>,
             tonic::Status,
         > {
             self.inner
@@ -120,17 +120,22 @@ pub mod peer_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/server.PeerService/HelloThere",
+                "/services.host_discovery.HostDiscoveryService/HelloThere",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("server.PeerService", "HelloThere"));
+                .insert(
+                    GrpcMethod::new(
+                        "services.host_discovery.HostDiscoveryService",
+                        "HelloThere",
+                    ),
+                );
             self.inner.unary(req, path, codec).await
         }
     }
 }
 /// Generated server implementations.
-pub mod peer_service_server {
+pub mod host_discovery_service_server {
     #![allow(
         unused_variables,
         dead_code,
@@ -139,29 +144,29 @@ pub mod peer_service_server {
         clippy::let_unit_value,
     )]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with PeerServiceServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with HostDiscoveryServiceServer.
     #[async_trait]
-    pub trait PeerService: std::marker::Send + std::marker::Sync + 'static {
-        /// Service discovery. Peer sends HelloThere message
-        /// with its own server info & on successful response
-        /// expects peer server info.
+    pub trait HostDiscoveryService: std::marker::Send + std::marker::Sync + 'static {
+        /// Host discovery. Peer sends HelloThere message
+        /// with its own host info & on successful response
+        /// expects host info.
         async fn hello_there(
             &self,
             request: tonic::Request<super::HelloThereRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::HelloThereResponse>,
+            tonic::Response<super::GeneralKenobiResponse>,
             tonic::Status,
         >;
     }
     #[derive(Debug)]
-    pub struct PeerServiceServer<T> {
+    pub struct HostDiscoveryServiceServer<T> {
         inner: Arc<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
         max_decoding_message_size: Option<usize>,
         max_encoding_message_size: Option<usize>,
     }
-    impl<T> PeerServiceServer<T> {
+    impl<T> HostDiscoveryServiceServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -212,9 +217,10 @@ pub mod peer_service_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for PeerServiceServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>>
+    for HostDiscoveryServiceServer<T>
     where
-        T: PeerService,
+        T: HostDiscoveryService,
         B: Body + std::marker::Send + 'static,
         B::Error: Into<StdError> + std::marker::Send + 'static,
     {
@@ -229,14 +235,14 @@ pub mod peer_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/server.PeerService/HelloThere" => {
+                "/services.host_discovery.HostDiscoveryService/HelloThere" => {
                     #[allow(non_camel_case_types)]
-                    struct HelloThereSvc<T: PeerService>(pub Arc<T>);
+                    struct HelloThereSvc<T: HostDiscoveryService>(pub Arc<T>);
                     impl<
-                        T: PeerService,
+                        T: HostDiscoveryService,
                     > tonic::server::UnaryService<super::HelloThereRequest>
                     for HelloThereSvc<T> {
-                        type Response = super::HelloThereResponse;
+                        type Response = super::GeneralKenobiResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -247,7 +253,8 @@ pub mod peer_service_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PeerService>::hello_there(&inner, request).await
+                                <T as HostDiscoveryService>::hello_there(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -296,7 +303,7 @@ pub mod peer_service_server {
             }
         }
     }
-    impl<T> Clone for PeerServiceServer<T> {
+    impl<T> Clone for HostDiscoveryServiceServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -309,8 +316,8 @@ pub mod peer_service_server {
         }
     }
     /// Generated gRPC service name
-    pub const SERVICE_NAME: &str = "server.PeerService";
-    impl<T> tonic::server::NamedService for PeerServiceServer<T> {
+    pub const SERVICE_NAME: &str = "services.host_discovery.HostDiscoveryService";
+    impl<T> tonic::server::NamedService for HostDiscoveryServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }
 }
