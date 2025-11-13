@@ -1,5 +1,7 @@
 use std::{net::Ipv4Addr, str::FromStr};
 
+use serde::Deserialize;
+
 pub(crate) fn discover_hosts_in_local_network() -> Option<Vec<Ipv4Addr>> {
     let nmap_result = std::process::Command::new("nmap")
         .arg("-sP")
@@ -33,7 +35,7 @@ impl CandidateAddressProvider for ArpAddressProvider {
         let arp_result = std::process::Command::new("arp").arg("-a").output();
 
         if let Err(err) = arp_result {
-            anyhow::bail!("Failed to run arp");
+            anyhow::bail!("Failed to run arp: {err}");
         }
 
         let Ok(arp_output) = arp_result else {
@@ -88,7 +90,37 @@ pub struct IpNeighAddressProvider;
 
 impl CandidateAddressProvider for IpNeighAddressProvider {
     fn compute_list(&self) -> anyhow::Result<Vec<Ipv4Addr>> {
-        todo!()
+        let cmd_output = match std::process::Command::new("ip")
+            .arg("-json")
+            .arg("neighbour")
+            .output()
+        {
+            Ok(result) => result,
+            Err(err) => {
+                anyhow::bail!("Failed to run `ip neighbour` command, err: {err}");
+            }
+        };
+
+        let output_string: String = match String::from_utf8(cmd_output.stdout) {
+            Ok(output_string) => output_string,
+            Err(err) => {
+                anyhow::bail!("Failed to convert arp output to string! Err: {err}");
+            }
+        };
+
+        let neigh_objects: Vec<IpNeighObject> = serde_json::from_str(&output_string)?;
+
+        let ipv4_list = neigh_objects
+            .into_iter()
+            .filter(|neigh| {
+                return !neigh.dst.contains(":")
+                    && !["FAILED", "INCOMPLETE"].contains(&neigh.state.first().unwrap().as_str());
+            })
+            .map(|neigh| Ipv4Addr::from_str(&neigh.dst))
+            .filter_map(Result::ok)
+            .collect::<Vec<Ipv4Addr>>();
+
+        Ok(ipv4_list)
     }
 }
 
@@ -101,10 +133,12 @@ impl CandidateAddressProviderFactory {
 
     pub fn make_provider(&self) -> Option<Box<dyn CandidateAddressProvider>> {
         if let Some(arp_provider) = self.make_arp_provider() {
+            log::debug!("ARP PROVIDER");
             return Some(arp_provider);
         }
 
         if let Some(ip_neigh_provider) = self.make_ip_neigh_provider() {
+            log::debug!("IP NEIGH PROVIDER");
             return Some(ip_neigh_provider);
         }
 
@@ -112,7 +146,9 @@ impl CandidateAddressProviderFactory {
     }
 
     fn make_arp_provider(&self) -> Option<Box<dyn CandidateAddressProvider>> {
+        log::debug!("MAKE ARP BEFORE CHECK");
         if !super::super::file::check_binary_exists("arp") {
+            log::debug!("MAKE ARP AFTER CHECK");
             return None;
         }
 
@@ -126,4 +162,11 @@ impl CandidateAddressProviderFactory {
 
         return Some(Box::new(IpNeighAddressProvider));
     }
+}
+
+#[derive(Deserialize)]
+struct IpNeighObject {
+    pub dst: String,
+    pub dev: String,
+    pub state: Vec<String>,
 }

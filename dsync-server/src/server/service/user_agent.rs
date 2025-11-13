@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::server::database::error::{FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
@@ -319,16 +320,19 @@ impl UserAgentServiceImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<HostInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
-        let mut client_conn =
-            match HostDiscoveryServiceClient::connect(remote_service_socket.clone()).await {
-                Ok(conn) => conn,
-                Err(error) => {
-                    log::debug!(
-                        "Failed to connect with {remote_service_socket} with error: {error}"
-                    );
-                    return None;
-                }
-            };
+        let endpoint = tonic::transport::Endpoint::try_from(remote_service_socket.clone())
+            .unwrap()
+            .connect_timeout(Duration::from_secs(5));
+
+        let channel = match endpoint.connect().await {
+            Ok(ch) => ch,
+            Err(error) => {
+                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
+                return None;
+            }
+        };
+
+        let mut client_conn = HostDiscoveryServiceClient::new(channel);
 
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
@@ -370,6 +374,8 @@ impl UserAgentServiceImpl {
                 "Failed to find hosts in local network",
             ));
         };
+
+        log::debug!("Resolved addrs: {:?}", &ipv4_addrs);
 
         let mut serial_responses: Vec<HostInfo> = Vec::new();
 
