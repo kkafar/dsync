@@ -102,6 +102,12 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::internal("file-sh1-comput-fail"));
         };
 
+        log::debug!(
+            "File info - size: {} bytes, sha1: {}",
+            file_size_bytes,
+            file_sha1
+        );
+
         // Step 3
         // Send init message to destination host
         let Ok(host_data) = self
@@ -214,6 +220,7 @@ impl FileTransferService for FileTransferServiceImpl {
             .unwrap();
 
         let mut writer = BufWriter::new(file_handle);
+        let mut hasher = sha1_smol::Sha1::new();
 
         while let Some(payload_result) = stream.next().await {
             match payload_result {
@@ -227,6 +234,7 @@ impl FileTransferService for FileTransferServiceImpl {
                         payload.data_buffer.len()
                             <= session.transfer_init_request.chunk_size as usize
                     );
+                    hasher.update(&payload.data_buffer);
                     self.write_chunk_to_file(&mut writer, payload.data_buffer)
                         .await;
                 }
@@ -242,6 +250,17 @@ impl FileTransferService for FileTransferServiceImpl {
         {
             let mut sreg = self.session_registry.lock().await;
             assert!(sreg.unregister(session_id));
+        }
+
+        // Compare hashes
+        let file_hash = hasher.digest().to_string();
+        if file_hash != session.transfer_init_request.file_sha1 {
+            log::error!(
+                "File hash mismatch! Expected: {}, got: {}",
+                session.transfer_init_request.file_sha1,
+                file_hash
+            );
+            return Err(tonic::Status::invalid_argument("file-hash-mismatch"));
         }
 
         Ok(tonic::Response::new(TransferChunkResponse {}))
