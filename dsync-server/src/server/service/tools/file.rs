@@ -2,7 +2,7 @@ use std::{io::Read, path::Path};
 
 use tokio::io::AsyncReadExt;
 
-pub(super) fn compute_sha1_hash_from_file(
+pub fn compute_sha1_hash_from_file(
     file_path: impl AsRef<Path>,
     buffer_read_capacity: Option<usize>,
 ) -> anyhow::Result<String> {
@@ -33,7 +33,7 @@ pub(super) fn compute_sha1_hash_from_file(
     anyhow::Ok(sha1_instance.digest().to_string())
 }
 
-pub(super) async fn compute_sha1_hash_from_file_async(
+pub async fn compute_sha1_hash_from_file_async(
     file_path: impl AsRef<Path>,
     buffer_read_capacity: Option<usize>,
 ) -> anyhow::Result<String> {
@@ -64,7 +64,25 @@ pub(super) async fn compute_sha1_hash_from_file_async(
     anyhow::Ok(sha1_instance.digest().to_string())
 }
 
-pub(super) fn ipv4_into_connection_addr(ipaddr: impl AsRef<str>, port: i32) -> String {
-    let ip_addr = ipaddr.as_ref();
-    return "http://".to_owned() + ip_addr + ":" + port.to_string().as_str();
+/// Basically tries to call `which ${binary_name}` & reports the command status.
+/// Returns false if the check has failed for some other reason!
+pub fn check_binary_exists(binary_name: &str) -> bool {
+    let mut which_command = std::process::Command::new("which");
+    which_command.arg(binary_name);
+
+    let exit_status = match which_command.status() {
+        Ok(status) => status,
+        Err(err) => {
+            println!(
+                "Failed to determine whether the binary: {binary_name} exists with error: {err}"
+            );
+            return false;
+        }
+    };
+
+    if exit_status.success() {
+        return true;
+    } else {
+        return false;
+    }
 }

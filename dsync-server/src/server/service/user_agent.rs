@@ -1,24 +1,27 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::server::database::error::{FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
-use crate::server::util;
-use crate::utils;
+use crate::server::service::tools;
 
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
-use dsync_proto::services::file_transfer::TransferSubmitRequest;
-use dsync_proto::services::file_transfer::file_transfer_service_client::FileTransferServiceClient;
-use dsync_proto::services::host_discovery::HelloThereRequest;
-use dsync_proto::services::host_discovery::host_discovery_service_client::HostDiscoveryServiceClient;
-use dsync_proto::services::user_agent::user_agent_service_server::UserAgentService;
-use dsync_proto::services::user_agent::{
-    FileAddRequest, FileAddResponse, FileCopyRequest, FileCopyResponse, FileListRequest,
-    FileListResponse, FileRemoveRequest, FileRemoveResponse, GroupCreateRequest,
-    GroupCreateResponse, GroupDeleteRequest, GroupDeleteResponse, GroupListRequest,
-    GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
-    HostListResponse,
+use dsync_proto::services::{
+    file_transfer::{
+        TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
+    },
+    host_discovery::{
+        HelloThereRequest, host_discovery_service_client::HostDiscoveryServiceClient,
+    },
+    user_agent::{
+        FileAddRequest, FileAddResponse, FileCopyRequest, FileCopyResponse, FileListRequest,
+        FileListResponse, FileRemoveRequest, FileRemoveResponse, GroupCreateRequest,
+        GroupCreateResponse, GroupDeleteRequest, GroupDeleteResponse, GroupListRequest,
+        GroupListResponse, HostDiscoverRequest, HostDiscoverResponse, HostListRequest,
+        HostListResponse, user_agent_service_server::UserAgentService,
+    },
 };
 use tonic::{Request, Response, Status};
 
@@ -63,7 +66,7 @@ impl UserAgentService for UserAgentServiceImpl {
         }
 
         // 2 - compute file hash
-        let hash = match util::compute_sha1_hash_from_file(&file_path, None) {
+        let hash = match tools::file::compute_sha1_hash_from_file(&file_path, None) {
             Ok(hash) => hash,
             Err(err) => {
                 log::warn!("Failed to compute hash for requested file with err: {err}");
@@ -208,7 +211,7 @@ impl UserAgentService for UserAgentServiceImpl {
         let Ok(mut transfer_client) =
             // FIXME: I pass here the port THIS server is running on. This should be the port of
             // the DestinationHost.
-            FileTransferServiceClient::connect(util::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
+            FileTransferServiceClient::connect(tools::net::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
         else {
             return Err(tonic::Status::unavailable("remote-server-unavailable"));
         };
@@ -317,16 +320,19 @@ impl UserAgentServiceImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<HostInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
-        let mut client_conn =
-            match HostDiscoveryServiceClient::connect(remote_service_socket.clone()).await {
-                Ok(conn) => conn,
-                Err(error) => {
-                    log::debug!(
-                        "Failed to connect with {remote_service_socket} with error: {error}"
-                    );
-                    return None;
-                }
-            };
+        let endpoint = tonic::transport::Endpoint::try_from(remote_service_socket.clone())
+            .unwrap()
+            .connect_timeout(Duration::from_secs(5));
+
+        let channel = match endpoint.connect().await {
+            Ok(ch) => ch,
+            Err(error) => {
+                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
+                return None;
+            }
+        };
+
+        let mut client_conn = HostDiscoveryServiceClient::new(channel);
 
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
@@ -359,19 +365,17 @@ impl UserAgentServiceImpl {
 
     async fn host_discovery_impl(&self) -> Result<Vec<HostInfo>, Status> {
         // TODO: this could be done once, on server start.
-        if !utils::check_binary_exists("nmap") {
+        if !tools::file::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
         }
 
-        if !utils::check_binary_exists("arp") {
-            return Err(tonic::Status::internal("Missing binary: arp"));
-        }
-
-        let Some(ipv4_addrs) = utils::discover_hosts_in_local_network() else {
+        let Some(ipv4_addrs) = tools::net::addr_discovery::discover_hosts_in_local_network() else {
             return Err(tonic::Status::internal(
                 "Failed to find hosts in local network",
             ));
         };
+
+        log::debug!("Resolved addrs: {:?}", &ipv4_addrs);
 
         let mut serial_responses: Vec<HostInfo> = Vec::new();
 
@@ -385,7 +389,7 @@ impl UserAgentServiceImpl {
             }
         }
 
-        let discovery_time = utils::time::get_current_timestamp();
+        let discovery_time = tools::time::get_current_timestamp();
 
         // Cache discovered hosts locally
         {
