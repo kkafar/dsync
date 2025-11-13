@@ -1,7 +1,6 @@
 mod cli;
 mod logging;
 mod server;
-mod utils;
 
 use std::{env, path::PathBuf};
 

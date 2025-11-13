@@ -13,14 +13,10 @@ use uuid::Uuid;
 
 use database::models::HostsRow;
 
-use crate::utils;
-
 pub mod config;
 pub mod database;
 pub mod global_context;
 pub(crate) mod service;
-
-pub(self) mod util;
 
 pub(crate) struct Server {
     run_config: RunConfiguration,
@@ -80,7 +76,7 @@ impl Server {
             hostname: hostname,
             is_remote: false,
             ipv4_addr: String::from("127.0.0.1"),
-            discovery_time: utils::time::get_current_timestamp(),
+            discovery_time: service::tools::time::get_current_timestamp(),
         };
     }
 

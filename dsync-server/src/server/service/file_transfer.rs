@@ -26,12 +26,14 @@ use tonic::{IntoRequest, transport::Channel};
 
 use crate::server::{
     global_context::GlobalContext,
-    service::file_transfer::{
-        session::{FileTransferSession, SessionId},
-        session_factory::FileTransferSessionFactory,
-        session_registry::FileTransferSessionRegistry,
+    service::{
+        file_transfer::{
+            session::{FileTransferSession, SessionId},
+            session_factory::FileTransferSessionFactory,
+            session_registry::FileTransferSessionRegistry,
+        },
+        tools,
     },
-    util,
 };
 
 // #[derive(Debug)]
@@ -94,7 +96,8 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::internal("file-size-conversion-fail"));
         };
 
-        let Ok(file_sha1) = util::compute_sha1_hash_from_file_async(&file_path_src, None).await
+        let Ok(file_sha1) =
+            tools::file::compute_sha1_hash_from_file_async(&file_path_src, None).await
         else {
             return Err(tonic::Status::internal("file-sh1-comput-fail"));
         };
@@ -112,7 +115,7 @@ impl FileTransferService for FileTransferServiceImpl {
 
         // FIXME: host_dst_addr most likely does not have port information attached
         let Ok(mut fts_client) = FileTransferServiceClient::connect(
-            util::ipv4_into_connection_addr(&host_data.ipv4_addr, 50051),
+            tools::net::ipv4_into_connection_addr(&host_data.ipv4_addr, 50051),
         )
         .await
         else {

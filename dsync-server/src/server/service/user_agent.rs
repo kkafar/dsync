@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use crate::server::database::error::{FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
-use crate::server::util;
-use crate::utils;
+use crate::server::service::tools;
 
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
@@ -66,7 +65,7 @@ impl UserAgentService for UserAgentServiceImpl {
         }
 
         // 2 - compute file hash
-        let hash = match util::compute_sha1_hash_from_file(&file_path, None) {
+        let hash = match tools::file::compute_sha1_hash_from_file(&file_path, None) {
             Ok(hash) => hash,
             Err(err) => {
                 log::warn!("Failed to compute hash for requested file with err: {err}");
@@ -211,7 +210,7 @@ impl UserAgentService for UserAgentServiceImpl {
         let Ok(mut transfer_client) =
             // FIXME: I pass here the port THIS server is running on. This should be the port of
             // the DestinationHost.
-            FileTransferServiceClient::connect(util::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
+            FileTransferServiceClient::connect(tools::net::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
         else {
             return Err(tonic::Status::unavailable("remote-server-unavailable"));
         };
@@ -362,15 +361,11 @@ impl UserAgentServiceImpl {
 
     async fn host_discovery_impl(&self) -> Result<Vec<HostInfo>, Status> {
         // TODO: this could be done once, on server start.
-        if !utils::check_binary_exists("nmap") {
+        if !tools::file::check_binary_exists("nmap") {
             return Err(tonic::Status::internal("Missing binary: nmap"));
         }
 
-        if !utils::check_binary_exists("arp") {
-            return Err(tonic::Status::internal("Missing binary: arp"));
-        }
-
-        let Some(ipv4_addrs) = utils::discover_hosts_in_local_network() else {
+        let Some(ipv4_addrs) = tools::net::addr_discovery::discover_hosts_in_local_network() else {
             return Err(tonic::Status::internal(
                 "Failed to find hosts in local network",
             ));
@@ -388,7 +383,7 @@ impl UserAgentServiceImpl {
             }
         }
 
-        let discovery_time = utils::time::get_current_timestamp();
+        let discovery_time = tools::time::get_current_timestamp();
 
         // Cache discovered hosts locally
         {
