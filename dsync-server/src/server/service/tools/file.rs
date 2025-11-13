@@ -19,8 +19,9 @@ pub fn compute_sha1_hash_from_file(
         }
     };
 
+    let buffer_capacity = buffer_read_capacity.unwrap_or(1024);
     let mut sha1_instance = sha1_smol::Sha1::new();
-    let mut buffer: Vec<u8> = Vec::with_capacity(buffer_read_capacity.unwrap_or(1024));
+    let mut buffer: Vec<u8> = vec![0; buffer_capacity];
 
     // TODO: Will it work if the file is empty?
     while let Ok(bytes_read) = file_handle.read(&mut buffer) {
@@ -50,8 +51,9 @@ pub async fn compute_sha1_hash_from_file_async(
         }
     };
 
+    let buffer_capacity = buffer_read_capacity.unwrap_or(1024);
     let mut sha1_instance = sha1_smol::Sha1::new();
-    let mut buffer: Vec<u8> = Vec::with_capacity(buffer_read_capacity.unwrap_or(1024));
+    let mut buffer: Vec<u8> = vec![0; buffer_capacity];
 
     // TODO: Will it work if the file is empty?
     while let Ok(bytes_read) = file_handle.read(&mut buffer).await {
