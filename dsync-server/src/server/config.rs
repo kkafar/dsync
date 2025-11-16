@@ -2,6 +2,10 @@
 
 use std::path::PathBuf;
 
+pub(crate) mod defaults {
+    pub const SERVER_PORT: i32 = 50051;
+}
+
 pub(crate) mod keys {
     pub const DATABASE_URL: &str = "DATABASE_URL";
     pub const ENV_FILE: &str = "ENV_FILE";

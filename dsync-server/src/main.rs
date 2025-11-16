@@ -7,6 +7,8 @@ use std::{env, path::PathBuf};
 use clap::Parser;
 use cli::Args;
 
+use crate::server::config::defaults;
+
 fn load_env(maybe_env_file: Option<&std::path::PathBuf>) -> anyhow::Result<std::path::PathBuf> {
     log::info!("Loading env...");
     if let Some(env_file) = maybe_env_file {
@@ -46,7 +48,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|port_string| port_string.parse::<i32>().unwrap());
 
     let server_instance = server::Server::new(server::config::RunConfiguration {
-        port: args.port.unwrap_or(server_port_env.unwrap_or(50051)),
+        port: args
+            .port
+            .unwrap_or(server_port_env.unwrap_or(defaults::SERVER_PORT)),
         database_url: PathBuf::from(database_url),
         env_file_path,
     });
