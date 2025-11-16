@@ -21,7 +21,7 @@ pub(crate) struct Args {
 
     #[arg(
         long,
-        help = "Port number for the server to listen on. This will overwrite SERVER_PORT env variable if set."
+        help = "Port number for the server to listen on. This will overwrite SERVER_PORT env variable if set. **Currently it is not recommended to use this option as the host discovery mechanism relies on a fixed port number.**"
     )]
     pub port: Option<i32>,
 
