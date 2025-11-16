@@ -167,6 +167,7 @@ impl CandidateAddressProviderFactory {
 #[derive(Deserialize)]
 struct IpNeighObject {
     pub dst: String,
+    #[allow(unused)]
     pub dev: String,
     pub state: Vec<String>,
 }

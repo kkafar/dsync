@@ -25,6 +25,7 @@ use tokio_stream::StreamExt;
 use tonic::{IntoRequest, transport::Channel};
 
 use crate::server::{
+    config::defaults,
     global_context::GlobalContext,
     service::{
         file_transfer::{
@@ -121,7 +122,7 @@ impl FileTransferService for FileTransferServiceImpl {
 
         // FIXME: host_dst_addr most likely does not have port information attached
         let Ok(mut fts_client) = FileTransferServiceClient::connect(
-            tools::net::ipv4_into_connection_addr(&host_data.ipv4_addr, 50051),
+            tools::net::ipv4_into_connection_addr(&host_data.ipv4_addr, defaults::SERVER_PORT),
         )
         .await
         else {
