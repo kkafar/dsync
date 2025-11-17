@@ -1,6 +1,8 @@
+mod util;
+
 use std::path::Path;
 
-use crate::command::utils;
+use crate::command::{file::util::FileSourceSpecWrapper, utils};
 use anyhow::Context;
 use dsync_proto::services::user_agent::{
     FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
@@ -126,10 +128,8 @@ pub(crate) async fn file_list(
 
 pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Result<()> {
     let request = tonic::Request::new(FileCopyRequest {
-        source_host: String::from("dynamo-pc"),
-        destination_host: String::from("dynamo-pc"),
-        source_paths: vec![source],
-        destination_path: destination,
+        src_spec: Some(util::parse_file_source_spec(&source)?),
+        dst_spec: Some(util::parse_file_source_spec(&destination)?),
     });
 
     let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)

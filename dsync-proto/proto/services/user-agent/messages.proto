@@ -3,6 +3,7 @@ package services.user_agent;
 
 import "model/server.proto";
 import "model/common.proto";
+import "services/user-agent/model.proto";
 
 message FileAddRequest {
   string file_path = 1;
@@ -28,10 +29,8 @@ message FileListResponse {
 }
 
 message FileCopyRequest {
-  string source_host = 1;
-  string destination_host = 2;
-  repeated string source_paths = 3;
-  string destination_path = 4;
+  services.user_agent.FileSourceSpec src_spec = 1;
+  services.user_agent.FileSourceSpec dst_spec = 2;
 }
 
 message FileCopyResponse {}
