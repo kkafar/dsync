@@ -101,10 +101,6 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
-    pub async fn fetch_host_by_spec(&self) -> anyhow::Result<HostsRow> {
-        todo!()
-    }
-
     pub async fn fetch_host_by_name(&self, name: impl AsRef<str>) -> anyhow::Result<HostsRow> {
         use schema::hosts::dsl as ht;
 
