@@ -130,14 +130,12 @@ pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Re
     let mut file_source_dst: FileSourceWrapper = parse_file_source_spec(&destination)?.into();
 
     if let Some(is_localhost) = file_source_src.host_spec.try_is_localhost() {
-        log::trace!("Source is_localhost: {}", is_localhost);
         if is_localhost {
             file_source_src.path_spec = file_source_src.path_spec.try_into_abs_path_spec()?;
         }
     };
 
     if let Some(is_localhost) = file_source_dst.host_spec.try_is_localhost() {
-        log::trace!("Dest is_localhost: {}", is_localhost);
         if is_localhost {
             file_source_dst.path_spec = file_source_dst.path_spec.try_into_abs_path_spec()?;
         }
