@@ -6,7 +6,7 @@ use dsync_proto::services::user_agent::{
     FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
     user_agent_service_client::UserAgentServiceClient,
 };
-use dsync_shared::model::parse_file_source_spec;
+use dsync_shared::model::{FileSourceWrapper, parse_file_source_spec};
 
 use crate::command::model::LOOPBACK_ADDR_V4;
 
@@ -126,9 +126,24 @@ pub(crate) async fn file_list(
 }
 
 pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Result<()> {
+    let mut file_source_src: FileSourceWrapper = parse_file_source_spec(&source)?.into();
+    let mut file_source_dst: FileSourceWrapper = parse_file_source_spec(&destination)?.into();
+
+    if let Some(is_localhost) = file_source_src.host_spec.try_is_localhost() {
+        if is_localhost {
+            file_source_src.path_spec = file_source_src.path_spec.try_into_abs_path_spec()?;
+        }
+    };
+
+    if let Some(is_localhost) = file_source_dst.host_spec.try_is_localhost() {
+        if is_localhost {
+            file_source_dst.path_spec = file_source_dst.path_spec.try_into_abs_path_spec()?;
+        }
+    };
+
     let request = tonic::Request::new(FileCopyRequest {
-        src_spec: Some(parse_file_source_spec(&source)?),
-        dst_spec: Some(parse_file_source_spec(&destination)?),
+        src_spec: Some(file_source_src.into()),
+        dst_spec: Some(file_source_dst.into()),
     });
 
     let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)

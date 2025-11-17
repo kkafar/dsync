@@ -9,7 +9,7 @@ use crate::server::service::tools;
 
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
-use dsync_proto::services::user_agent::file_source::HostSpec;
+use dsync_proto::services::user_agent::file_source::{HostSpec, PathSpec};
 use dsync_proto::services::{
     file_transfer::{
         TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
@@ -216,7 +216,9 @@ impl UserAgentService for UserAgentServiceImpl {
         };
 
         let host_local_info = if !host_src_info.is_remote {
-            host_src_info
+            host_src_info.clone()
+        } else if !host_dst_info.is_remote {
+            host_dst_info.clone()
         } else {
             self.ctx
                 .db_proxy
@@ -235,7 +237,7 @@ impl UserAgentService for UserAgentServiceImpl {
         };
 
         let Ok(mut transfer_client) = FileTransferServiceClient::connect(
-            tools::net::ipv4_into_connection_addr(&host_dst_info.ipv4_addr, defaults::SERVER_PORT),
+            tools::net::ipv4_into_connection_addr(&host_src_info.ipv4_addr, defaults::SERVER_PORT),
         )
         .await
         else {
