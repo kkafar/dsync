@@ -1,22 +1,14 @@
 syntax = "proto3";
 package services.user_agent;
 
-message HostSpec {
-  oneof inner {
+message FileSource {
+  oneof host_spec {
     int32 local_host = 1;
     string name = 2;
     int32 local_id = 3;
-  }
-}
-
-message PathSpec {
-  oneof inner {
-    string relative_path = 1;
-    string absolute_path = 2;
-  }
-}
-
-message FileSourceSpec {
-  HostSpec host_spec = 1;
-  PathSpec path_spec = 2;
+  };
+  oneof path_spec {
+    string relative_path = 4;
+    string absolute_path = 5;
+  };
 }

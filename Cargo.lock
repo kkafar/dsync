@@ -474,6 +474,7 @@ dependencies = [
  "anyhow",
  "clap",
  "dsync-proto",
+ "dsync-shared",
  "log",
  "log4rs",
  "prettytable-rs",
@@ -503,6 +504,7 @@ dependencies = [
  "diesel",
  "dotenvy",
  "dsync-proto",
+ "dsync-shared",
  "log",
  "log4rs",
  "prost",
@@ -519,6 +521,11 @@ dependencies = [
 [[package]]
 name = "dsync-shared"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dsync-proto",
+ "thiserror 2.0.12",
+]
 
 [[package]]
 name = "either"

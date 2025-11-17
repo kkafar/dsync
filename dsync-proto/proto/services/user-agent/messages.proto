@@ -29,8 +29,10 @@ message FileListResponse {
 }
 
 message FileCopyRequest {
-  services.user_agent.FileSourceSpec src_spec = 1;
-  services.user_agent.FileSourceSpec dst_spec = 2;
+  // Required
+  services.user_agent.FileSource src_spec = 1;
+  // Required
+  services.user_agent.FileSource dst_spec = 2;
 }
 
 message FileCopyResponse {}

@@ -16,6 +16,7 @@ diesel = { version = "2.2.0", features = [
     "returning_clauses_for_sqlite_3_35",
 ] }
 dsync-proto = { path = "../dsync-proto" }
+dsync-shared = { path = "../dsync-shared" }
 dotenvy = "0.15"
 uuid = { version = "1.17.0", features = ["v4"] }
 clap = { version = "4.5.38", features = ["derive"] }
