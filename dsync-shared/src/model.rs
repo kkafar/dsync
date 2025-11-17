@@ -33,6 +33,15 @@ impl PathSpecWrapper {
         })
     }
 
+    pub fn try_into_abs_path_spec(self) -> anyhow::Result<PathSpecWrapper> {
+        match self.0 {
+            PathSpec::AbsolutePath(_) => Ok(self),
+            PathSpec::RelativePath(_) => Ok(PathSpecWrapper(PathSpec::AbsolutePath(
+                self.try_into_abs_path()?,
+            ))),
+        }
+    }
+
     pub fn into_direct_string(self) -> String {
         match self.0 {
             PathSpec::AbsolutePath(abs_path) => abs_path,
@@ -55,6 +64,23 @@ impl HostSpecWrapper {
             HostSpec::LocalHost(_) => "localhost".to_owned(),
             HostSpec::Name(name) => name,
             HostSpec::LocalId(id) => id.to_string(),
+        }
+    }
+
+    /// This method might fail, when user specified local host `hostname` or actual `name`.
+    /// In that case I can not verify w/o additional knowledge whether this is localhost or not.
+    pub fn try_is_localhost(&self) -> Option<bool> {
+        match self.0 {
+            HostSpec::LocalId(id) if id == 0 => Some(true),
+            HostSpec::LocalHost(_) => Some(true),
+            HostSpec::Name(ref name) => {
+                if name == "localhost" {
+                    Some(true)
+                } else {
+                    None
+                }
+            }
+            _ => Some(false),
         }
     }
 }
