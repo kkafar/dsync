@@ -129,7 +129,7 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::failed_precondition("fts-connection-fail"));
         };
 
-        let transfer_request = TransferInitRequest {
+        let transfer_init_request = TransferInitRequest {
             file_path_src: request_inner.file_path_src,
             file_path_dst: request_inner.file_path_dst,
             file_sha1: file_sha1,
@@ -137,7 +137,9 @@ impl FileTransferService for FileTransferServiceImpl {
             chunk_size: 1024 * 8,
         };
 
-        let result = fts_client.transfer_init(transfer_request.clone()).await;
+        let result = fts_client
+            .transfer_init(transfer_init_request.clone())
+            .await;
 
         let transfer_init_response = match result {
             Ok(response) => {
@@ -154,7 +156,7 @@ impl FileTransferService for FileTransferServiceImpl {
         // Schedule data transfer
         tokio::spawn(Self::transfer_file_impl(
             fts_client,
-            transfer_request,
+            transfer_init_request,
             transfer_init_response,
         ));
 
@@ -216,7 +218,7 @@ impl FileTransferService for FileTransferServiceImpl {
         let file_handle = OpenOptions::new()
             .write(true)
             .create(true)
-            .open("transfer_file_text.txt")
+            .open(&session.transfer_init_request.file_path_dst) // TODO: Sanitize path
             .await
             .unwrap();
 

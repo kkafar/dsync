@@ -2,12 +2,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::server::config::defaults;
 use crate::server::database::error::{FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::service::tools;
 
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
+use dsync_proto::services::user_agent::file_source::HostSpec;
 use dsync_proto::services::{
     file_transfer::{
         TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
@@ -23,6 +25,7 @@ use dsync_proto::services::{
         HostListResponse, user_agent_service_server::UserAgentService,
     },
 };
+use dsync_shared::model::FileSourceWrapper;
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
@@ -177,52 +180,66 @@ impl UserAgentService for UserAgentServiceImpl {
     ) -> Result<Response<FileCopyResponse>, Status> {
         let request = request.into_inner();
 
-        if request.source_paths.is_empty() {
-            return Err(tonic::Status::invalid_argument("empty-file-list"));
+        if request.src_spec.is_none() {
+            return Err(tonic::Status::invalid_argument("missing-src-spec"));
         }
 
-        // Extract destination host information from database basing on characteristic
-        let dest_host = &request.destination_host;
+        if request.dst_spec.is_none() {
+            return Err(tonic::Status::invalid_argument("missing-dst-spec"));
+        }
 
-        let server_info_list = self
-            .ctx
-            .db_proxy
-            .fetch_hosts()
+        let file_src_spec: FileSourceWrapper = request.src_spec.unwrap().into();
+        let file_dst_spec: FileSourceWrapper = request.dst_spec.unwrap().into();
+
+        let host_dst_info = match self
+            .resolve_host_info_by_spec(&file_dst_spec.host_spec.0)
             .await
-            .expect("TODO: Handle this error");
-
-        // TODO: This should be avilable from fetch above if only the is_remote info would be
-        // accessible.
-        let this_host_server_info = self
-            .ctx
-            .db_proxy
-            .fetch_local_server_info()
-            .await
-            .expect("Failed to fetch local server info");
-
-        let dest_host_info = server_info_list
-            .iter()
-            .find(|server_info| &server_info.name == dest_host);
-
-        let Some(dest_host_info) = dest_host_info else {
-            return Err(tonic::Status::invalid_argument("server-does-not-exist"));
+        {
+            Ok(info) => info,
+            Err(err) => {
+                return Err(tonic::Status::invalid_argument(format!(
+                    "failed-to-resolve-dest-host-spec: {err}"
+                )));
+            }
         };
 
-        let Ok(mut transfer_client) =
-            // FIXME: I pass here the port THIS server is running on. This should be the port of
-            // the DestinationHost.
-            FileTransferServiceClient::connect(tools::net::ipv4_into_connection_addr(&dest_host_info.address, self.ctx.run_config.port)).await
-        else {
-            return Err(tonic::Status::unavailable("remote-server-unavailable"));
+        let host_src_info = match self
+            .resolve_host_info_by_spec(&file_src_spec.host_spec.0)
+            .await
+        {
+            Ok(info) => info,
+            Err(err) => {
+                return Err(tonic::Status::invalid_argument(format!(
+                    "failed-to-resolve-src-host-spec: {err}"
+                )));
+            }
         };
 
-        let file_path_src = request.source_paths.first().unwrap();
+        let host_local_info = if !host_src_info.is_remote {
+            host_src_info
+        } else {
+            self.ctx
+                .db_proxy
+                .fetch_local_server_info()
+                .await
+                .map_err(|err| {
+                    tonic::Status::internal(format!("failed-to-resolve-local-host-info: {err}"))
+                })?
+        };
 
         let transfer_request = TransferSubmitRequest {
-            file_path_src: file_path_src.clone(),
-            file_path_dst: request.destination_path,
-            host_org_uuid: this_host_server_info.uuid,
-            host_dst_uuid: dest_host_info.uuid.clone(),
+            file_path_src: file_src_spec.path_spec.into_direct_string(),
+            file_path_dst: file_dst_spec.path_spec.into_direct_string(),
+            host_org_uuid: host_local_info.uuid,
+            host_dst_uuid: host_dst_info.uuid,
+        };
+
+        let Ok(mut transfer_client) = FileTransferServiceClient::connect(
+            tools::net::ipv4_into_connection_addr(&host_dst_info.ipv4_addr, defaults::SERVER_PORT),
+        )
+        .await
+        else {
+            return Err(tonic::Status::unavailable("remote-server-unavailable"));
         };
 
         let _transfer_response = match transfer_client.transfer_submit(transfer_request).await {
@@ -410,5 +427,22 @@ impl UserAgentServiceImpl {
         }
 
         Ok(serial_responses)
+    }
+
+    async fn resolve_host_info_by_spec(&self, host_spec: &HostSpec) -> anyhow::Result<HostsRow> {
+        match host_spec {
+            HostSpec::LocalHost(_) => {
+                let local_host_info = self.ctx.db_proxy.fetch_local_server_info().await?;
+                Ok(local_host_info)
+            }
+            HostSpec::Name(name) => {
+                let host_info = self.ctx.db_proxy.fetch_host_by_name(name).await?;
+                Ok(host_info)
+            }
+            HostSpec::LocalId(id) => {
+                let host_info = self.ctx.db_proxy.fetch_host_by_local_id(*id).await?;
+                Ok(host_info)
+            }
+        }
     }
 }

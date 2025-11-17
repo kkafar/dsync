@@ -6,6 +6,7 @@ use dsync_proto::services::user_agent::{
     FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
     user_agent_service_client::UserAgentServiceClient,
 };
+use dsync_shared::model::parse_file_source_spec;
 
 use crate::command::model::LOOPBACK_ADDR_V4;
 
@@ -126,10 +127,8 @@ pub(crate) async fn file_list(
 
 pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Result<()> {
     let request = tonic::Request::new(FileCopyRequest {
-        source_host: String::from("dynamo-pc"),
-        destination_host: String::from("dynamo-pc"),
-        source_paths: vec![source],
-        destination_path: destination,
+        src_spec: Some(parse_file_source_spec(&source)?),
+        dst_spec: Some(parse_file_source_spec(&destination)?),
     });
 
     let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)

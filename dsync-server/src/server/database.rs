@@ -101,6 +101,49 @@ impl DatabaseProxy {
             .expect("Failed to insert server info to db");
     }
 
+    pub async fn fetch_host_by_name(&self, name: impl AsRef<str>) -> anyhow::Result<HostsRow> {
+        use schema::hosts::dsl as ht;
+
+        let name = name.as_ref();
+
+        let qr_result = {
+            let mut connection = self.conn.lock().await;
+            QueryDsl::filter(ht::hosts, ht::name.eq(name))
+                .select(HostsRow::as_select())
+                .first(connection.deref_mut())
+        };
+
+        let row = match qr_result {
+            Ok(row) => row,
+            Err(err) => {
+                anyhow::bail!("Failed to fetch the row: {err}");
+            }
+        };
+
+        return Ok(row);
+    }
+
+    pub async fn fetch_host_by_local_id(&self, _local_id: i32) -> anyhow::Result<HostsRow> {
+        // use schema::hosts::dsl as ht;
+        //
+        // let qr_result = {
+        //     let mut connection = self.conn.lock().await;
+        //     QueryDsl::filter(ht::hosts, ht::id.eq(local_id))
+        //         .select(HostsRow::as_select())
+        //         .first(connection.deref_mut())
+        // };
+        //
+        // let row = match qr_result {
+        //     Ok(row) => row,
+        //     Err(err) => {
+        //         anyhow::bail!("Failed to fetch the row: {err}");
+        //     }
+        // };
+        //
+        // return Ok(row);
+        anyhow::bail!("Not implemented yet");
+    }
+
     pub async fn fetch_hosts(&self) -> anyhow::Result<Vec<HostInfo>> {
         use schema::hosts::dsl::*;
 

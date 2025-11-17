@@ -1,0 +1,14 @@
+syntax = "proto3";
+package services.user_agent;
+
+message FileSource {
+  oneof host_spec {
+    int32 local_host = 1;
+    string name = 2;
+    int32 local_id = 3;
+  };
+  oneof path_spec {
+    string relative_path = 4;
+    string absolute_path = 5;
+  };
+}
