@@ -38,7 +38,9 @@ impl DatabaseProxy {
             QueryDsl::filter(hosts, is_remote.eq(false))
                 .select(HostsRow::as_select())
                 .load(db_conn.deref_mut())
-                .context("Error while loading configuration")
+                .context(
+                    "Error while loading configuration. Maybe you forgot to initiate the database?",
+                )
         };
 
         if let Err(err) = results {
