@@ -32,14 +32,14 @@ impl DatabaseProxy {
 impl DatabaseProxy {
     pub async fn fetch_local_server_info(&self) -> Result<HostsRow, LocalServerBaseInfoError> {
         use schema::hosts::dsl::*;
-        let mut db_conn = self.conn.lock().await;
 
-        let results = QueryDsl::filter(hosts, is_remote.eq(false))
-            .select(HostsRow::as_select())
-            .load(db_conn.deref_mut())
-            .context("Error while loading configuration");
-
-        std::mem::drop(db_conn);
+        let results = {
+            let mut db_conn = self.conn.lock().await;
+            QueryDsl::filter(hosts, is_remote.eq(false))
+                .select(HostsRow::as_select())
+                .load(db_conn.deref_mut())
+                .context("Error while loading configuration")
+        };
 
         if let Err(err) = results {
             return Err(LocalServerBaseInfoError::Other(err));
