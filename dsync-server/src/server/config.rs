@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 pub(crate) mod defaults {
-    pub const SERVER_PORT: i32 = 50051;
+    pub const SERVER_PORT: u16 = 50051;
     pub const ADDR_LOOPBACK_V4: &str = "127.0.0.1";
     pub const ADDR_ALL_INTERFACES_V4: &str = "0.0.0.0";
 }
@@ -18,7 +18,7 @@ pub(crate) mod keys {
 #[derive(Debug)]
 pub(crate) struct RunConfiguration {
     /// Port the server should listen on.
-    pub port: i32,
+    pub port: u16,
 
     /// Path to local storage database.
     pub database_url: PathBuf,

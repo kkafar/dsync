@@ -23,7 +23,7 @@ pub(crate) struct Args {
         long,
         help = "Port number for the server to listen on. This will overwrite SERVER_PORT env variable if set. **Currently it is not recommended to use this option as the host discovery mechanism relies on a fixed port number.**"
     )]
-    pub port: Option<i32>,
+    pub port: Option<u16>,
 
     #[arg(short = 'l', long, help = "Configure logging level of the client.")]
     pub log_level: Option<log::LevelFilter>,

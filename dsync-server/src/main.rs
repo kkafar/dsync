@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let server_port_env = env::var(server::config::keys::SERVER_PORT)
         .ok()
-        .map(|port_string| port_string.parse::<i32>().unwrap());
+        .map(|port_string| port_string.parse::<u16>().unwrap());
 
     let server_instance = server::Server::new(server::config::RunConfiguration {
         port: args
