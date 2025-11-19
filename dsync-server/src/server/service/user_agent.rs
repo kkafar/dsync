@@ -29,6 +29,7 @@ use dsync_proto::services::{
     },
 };
 use dsync_shared::model::FileSourceWrapper;
+use tonic::transport::Uri;
 use tonic::{Request, Response, Status};
 
 use crate::server::global_context::GlobalContext;
@@ -351,10 +352,14 @@ impl UserAgentServiceImpl {
 
         // Try to connect with the host
         let remote_service_socket = SocketAddrV4::new(remote_ip_addr, defaults::SERVER_PORT);
+        let remote_service_uri = Uri::builder()
+            .scheme("http")
+            .authority(remote_service_socket.clone().to_string())
+            .path_and_query("/")
+            .build()
+            .unwrap();
 
-        let Ok(mut endpoint) =
-            tonic::transport::Endpoint::new(remote_service_socket.clone().to_string())
-        else {
+        let Ok(mut endpoint) = tonic::transport::Endpoint::new(remote_service_uri) else {
             log::warn!(target: "pslog", "Failed to create endpoint for addr: {}", &remote_service_socket);
             return None;
         };
