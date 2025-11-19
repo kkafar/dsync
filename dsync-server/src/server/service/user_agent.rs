@@ -357,7 +357,13 @@ impl UserAgentServiceImpl {
             .authority(remote_service_socket.clone().to_string())
             .path_and_query("/")
             .build()
-            .unwrap();
+            .with_context(|| {
+                format!(
+                    "Failed to build remote service uri from socket addr: {}",
+                    &remote_service_socket
+                )
+            })
+            .ok()?;
 
         let Ok(mut endpoint) = tonic::transport::Endpoint::new(remote_service_uri) else {
             log::warn!(target: "pslog", "Failed to create endpoint for addr: {}", &remote_service_socket);
