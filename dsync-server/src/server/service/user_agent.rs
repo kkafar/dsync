@@ -350,8 +350,7 @@ impl UserAgentServiceImpl {
             .ok()?;
 
         // Try to connect with the host
-        let remote_service_socket =
-            SocketAddrV4::new(remote_ip_addr, self.ctx.run_config.port as u16);
+        let remote_service_socket = SocketAddrV4::new(remote_ip_addr, defaults::SERVER_PORT);
 
         let Ok(mut endpoint) =
             tonic::transport::Endpoint::new(remote_service_socket.clone().to_string())
