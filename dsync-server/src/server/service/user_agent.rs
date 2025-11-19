@@ -1,4 +1,6 @@
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -7,6 +9,7 @@ use crate::server::database::error::{FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::service::tools;
 
+use anyhow::Context;
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
 use dsync_proto::services::user_agent::file_source::{HostSpec, PathSpec};
@@ -337,10 +340,21 @@ impl UserAgentService for UserAgentServiceImpl {
 
 impl UserAgentServiceImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<HostInfo> {
-        // Try to connect with the host
-        let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
+        let remote_ip_addr = Ipv4Addr::from_str(ipv4_addr)
+            .with_context(|| {
+                format!(
+                    "Failed to resolve host ipv4 addr from string: {}",
+                    ipv4_addr
+                )
+            })
+            .ok()?;
 
-        let Ok(mut endpoint) = tonic::transport::Endpoint::new(remote_service_socket.clone())
+        // Try to connect with the host
+        let remote_service_socket =
+            SocketAddrV4::new(remote_ip_addr, self.ctx.run_config.port as u16);
+
+        let Ok(mut endpoint) =
+            tonic::transport::Endpoint::new(remote_service_socket.clone().to_string())
         else {
             log::warn!(target: "pslog", "Failed to create endpoint for addr: {}", &remote_service_socket);
             return None;
@@ -357,10 +371,6 @@ impl UserAgentServiceImpl {
         };
 
         let mut client_conn = HostDiscoveryServiceClient::new(channel);
-
-        // let mut client_conn = HostDiscoveryServiceClient::connect(remote_service_socket.clone())
-        //     .await
-        //     .ok()?;
 
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
@@ -386,7 +396,7 @@ impl UserAgentServiceImpl {
         );
 
         // Fill up the address, because we actually have this information here
-        remote_server_info.address = remote_service_socket;
+        remote_server_info.address = remote_service_socket.ip().to_string();
 
         Some(remote_server_info)
     }
