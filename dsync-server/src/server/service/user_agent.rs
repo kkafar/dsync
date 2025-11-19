@@ -12,7 +12,7 @@ use crate::server::service::tools;
 use anyhow::Context;
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
-use dsync_proto::services::user_agent::file_source::{HostSpec, PathSpec};
+use dsync_proto::services::user_agent::file_source::HostSpec;
 use dsync_proto::services::{
     file_transfer::{
         TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
@@ -55,7 +55,15 @@ impl UserAgentService for UserAgentServiceImpl {
         log::info!("Received FileAdd");
         log::debug!("Payload: {request_payload:?}");
 
-        let file_path_string = request_payload.file_path;
+        if request_payload.file_paths.is_empty() {
+            return Ok(tonic::Response::new(FileAddResponse {}));
+        }
+
+        let file_path_string = request_payload
+            .file_paths
+            .first()
+            .expect("Vec can not be empty; asserted above");
+
         let file_path = PathBuf::from(file_path_string);
 
         if !file_path.is_absolute() {

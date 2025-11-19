@@ -27,8 +27,8 @@ pub mod file_source {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileAddRequest {
-    #[prost(string, tag = "1")]
-    pub file_path: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "1")]
+    pub file_paths: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "2")]
     pub group_id: ::core::option::Option<::prost::alloc::string::String>,
 }

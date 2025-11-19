@@ -31,7 +31,7 @@ pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> 
         .to_string();
 
     let request = tonic::Request::new(FileAddRequest {
-        file_path: path_as_string,
+        file_paths: vec![path_as_string],
         group_id: None,
     });
 
@@ -161,10 +161,10 @@ pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Re
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_sync() -> anyhow::Result<()> {
+pub(crate) async fn file_sync() -> Result<(), anyhow::Error> {
     todo!()
 }
 
-pub(crate) async fn file_unsync() -> anyhow::Result<()> {
+pub(crate) async fn file_unsync() -> Result<(), anyhow::Error> {
     todo!()
 }

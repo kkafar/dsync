@@ -6,7 +6,7 @@ import "model/common.proto";
 import "services/user-agent/model.proto";
 
 message FileAddRequest {
-  string file_path = 1;
+  repeated string file_paths = 1;
   optional string group_id = 2;
 }
 
