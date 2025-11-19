@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 pub(crate) mod defaults {
     pub const SERVER_PORT: i32 = 50051;
+    pub const ADDR_LOOPBACK_V4: &str = "127.0.0.1";
+    pub const ADDR_ALL_INTERFACES_V4: &str = "0.0.0.0";
 }
 
 pub(crate) mod keys {

@@ -339,19 +339,28 @@ impl UserAgentServiceImpl {
     async fn check_hello(&self, ipv4_addr: &str) -> Option<HostInfo> {
         // Try to connect with the host
         let remote_service_socket = format!("http://{ipv4_addr}:{}", self.ctx.run_config.port);
-        let endpoint = tonic::transport::Endpoint::try_from(remote_service_socket.clone())
-            .unwrap()
-            .connect_timeout(Duration::from_secs(5));
+
+        let Ok(mut endpoint) = tonic::transport::Endpoint::new(remote_service_socket.clone())
+        else {
+            log::warn!(target: "pslog", "Failed to create endpoint for addr: {}", &remote_service_socket);
+            return None;
+        };
+
+        endpoint = endpoint.connect_timeout(Duration::from_secs(10));
 
         let channel = match endpoint.connect().await {
             Ok(ch) => ch,
             Err(error) => {
-                log::debug!("Failed to connect with {remote_service_socket} with error: {error}");
+                log::warn!("Failed to connect with {remote_service_socket} with error: {error}");
                 return None;
             }
         };
 
         let mut client_conn = HostDiscoveryServiceClient::new(channel);
+
+        // let mut client_conn = HostDiscoveryServiceClient::connect(remote_service_socket.clone())
+        //     .await
+        //     .ok()?;
 
         let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
 
