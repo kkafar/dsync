@@ -1,4 +1,8 @@
-use std::{process::Command, sync::Arc};
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    process::Command,
+    sync::Arc,
+};
 
 use config::RunConfiguration;
 use database::DatabaseProxy;
@@ -39,9 +43,7 @@ impl Server {
             .ensure_db_record_exists(|| self.create_this_server_info())
             .await;
 
-        let addr_str = format!("127.0.0.1:{}", self.run_config.port);
-
-        let addr = addr_str.parse()?;
+        let server_addr = self.get_server_addr();
 
         let g_ctx = Arc::new(GlobalContext {
             run_config: self.run_config,
@@ -55,13 +57,13 @@ impl Server {
         let file_transfer_service =
             service::file_transfer::FileTransferServiceImpl::new(g_ctx.clone());
 
-        log::info!("Starting server at {:?}", addr);
+        log::info!("Starting server at {:?}", &server_addr);
 
         tonic::transport::Server::builder()
             .add_service(UserAgentServiceServer::new(user_agent_service_instance))
             .add_service(HostDiscoveryServiceServer::new(peer_service_instance))
             .add_service(FileTransferServiceServer::new(file_transfer_service))
-            .serve(addr)
+            .serve(server_addr.into())
             .await?;
 
         anyhow::Ok(())
@@ -89,5 +91,9 @@ impl Server {
             .trim()
             .to_string();
         return anyhow::Ok(output_string);
+    }
+
+    fn get_server_addr(&self) -> SocketAddrV4 {
+        return SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.run_config.port as u16);
     }
 }
