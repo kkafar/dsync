@@ -26,7 +26,7 @@ use tonic::{IntoRequest, transport::Channel};
 
 use crate::server::{
     config::defaults,
-    global_context::GlobalContext,
+    context::ServerContext,
     service::{
         file_transfer::{
             session::{FileTransferSession, SessionId},
@@ -39,13 +39,13 @@ use crate::server::{
 
 // #[derive(Debug)]
 pub struct FileTransferServiceImpl {
-    global_ctx: Arc<GlobalContext>,
+    global_ctx: Arc<ServerContext>,
     session_registry: tokio::sync::Mutex<FileTransferSessionRegistry>,
     session_factory: tokio::sync::Mutex<FileTransferSessionFactory>,
 }
 
 impl FileTransferServiceImpl {
-    pub fn new(ctx: Arc<GlobalContext>) -> Self {
+    pub fn new(ctx: Arc<ServerContext>) -> Self {
         Self {
             global_ctx: ctx,
             session_registry: tokio::sync::Mutex::new(FileTransferSessionRegistry::new()),

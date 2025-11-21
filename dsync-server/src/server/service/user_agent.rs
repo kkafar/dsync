@@ -32,14 +32,14 @@ use dsync_shared::model::FileSourceWrapper;
 use tonic::transport::Uri;
 use tonic::{Request, Response, Status};
 
-use crate::server::global_context::GlobalContext;
+use crate::server::context::ServerContext;
 
 pub struct UserAgentServiceImpl {
-    ctx: Arc<GlobalContext>,
+    ctx: Arc<ServerContext>,
 }
 
 impl UserAgentServiceImpl {
-    pub fn new(ctx: Arc<GlobalContext>) -> Self {
+    pub fn new(ctx: Arc<ServerContext>) -> Self {
         Self { ctx }
     }
 }

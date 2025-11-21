@@ -4,16 +4,16 @@ use dsync_proto::services::host_discovery::{GeneralKenobiResponse, HelloThereReq
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
+use crate::server::context::ServerContext;
 use crate::server::database::models::HostsRow;
-use crate::server::global_context::GlobalContext;
 
 // #[derive(Debug)]
 pub struct HostDiscoveryServiceImpl {
-    ctx: Arc<GlobalContext>,
+    ctx: Arc<ServerContext>,
 }
 
 impl HostDiscoveryServiceImpl {
-    pub fn new(ctx: Arc<GlobalContext>) -> Self {
+    pub fn new(ctx: Arc<ServerContext>) -> Self {
         Self { ctx }
     }
 

@@ -5,6 +5,7 @@ use std::{
 };
 
 use config::RunConfiguration;
+use context::ServerContext;
 use database::DatabaseProxy;
 use diesel::{Connection, SqliteConnection};
 use dsync_proto::services::{
@@ -12,14 +13,13 @@ use dsync_proto::services::{
     host_discovery::host_discovery_service_server::HostDiscoveryServiceServer,
     user_agent::user_agent_service_server::UserAgentServiceServer,
 };
-use global_context::GlobalContext;
 use uuid::Uuid;
 
 use database::models::HostsRow;
 
 pub mod config;
+pub mod context;
 pub mod database;
-pub mod global_context;
 pub(crate) mod service;
 
 pub(crate) struct Server {
@@ -45,7 +45,7 @@ impl Server {
 
         let server_addr = self.get_server_addr();
 
-        let g_ctx = Arc::new(GlobalContext {
+        let g_ctx = Arc::new(ServerContext {
             run_config: self.run_config,
             db_proxy: Arc::new(db_proxy),
         });
