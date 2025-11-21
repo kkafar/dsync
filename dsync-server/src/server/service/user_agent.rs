@@ -12,7 +12,7 @@ use crate::server::service::tools;
 use anyhow::Context;
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
-use dsync_proto::services::user_agent::file_source::{HostSpec, PathSpec};
+use dsync_proto::services::user_agent::file_source::HostSpec;
 use dsync_proto::services::{
     file_transfer::{
         TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
