@@ -39,7 +39,7 @@ use crate::server::{
 
 // #[derive(Debug)]
 pub struct FileTransferServiceImpl {
-    global_ctx: Arc<ServerContext>,
+    server_ctx: Arc<ServerContext>,
     session_registry: tokio::sync::Mutex<FileTransferSessionRegistry>,
     session_factory: tokio::sync::Mutex<FileTransferSessionFactory>,
 }
@@ -47,7 +47,7 @@ pub struct FileTransferServiceImpl {
 impl FileTransferServiceImpl {
     pub fn new(ctx: Arc<ServerContext>) -> Self {
         Self {
-            global_ctx: ctx,
+            server_ctx: ctx,
             session_registry: tokio::sync::Mutex::new(FileTransferSessionRegistry::new()),
             session_factory: tokio::sync::Mutex::new(FileTransferSessionFactory::new()),
         }
@@ -112,7 +112,7 @@ impl FileTransferService for FileTransferServiceImpl {
         // Step 3
         // Send init message to destination host
         let Ok(host_data) = self
-            .global_ctx
+            .server_ctx
             .db_proxy
             .fetch_host_by_uuid(&request_inner.host_dst_uuid)
             .await
