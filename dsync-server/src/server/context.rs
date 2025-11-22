@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::sync::Arc;
 
 use super::{config::RunConfiguration, database::DatabaseProxy};

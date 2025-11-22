@@ -12,13 +12,13 @@ use crate::server::config::defaults;
 fn load_env(maybe_env_file: Option<&std::path::PathBuf>) -> anyhow::Result<std::path::PathBuf> {
     log::info!("Loading env...");
     if let Some(env_file) = maybe_env_file {
-        let _ = dotenvy::from_path(env_file)?;
+        dotenvy::from_path(env_file)?;
         log::info!("Env loaded from {:?}", env_file);
-        return Ok(env_file.to_owned());
+        Ok(env_file.to_owned())
     } else {
         let env_file = dotenvy::dotenv()?;
         log::info!("Env loaded from {:?}", env_file);
-        return Ok(env_file);
+        Ok(env_file)
     }
 }
 
@@ -38,10 +38,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env_file_path =
         load_env(env_file_path_input).expect("Failure while environment initialization");
 
-    let database_url = env::var(server::config::keys::DATABASE_URL).expect(&format!(
-        "{} env variable must be set",
-        server::config::keys::DATABASE_URL
-    ));
+    let database_url = env::var(server::config::keys::DATABASE_URL).unwrap_or_else(|_| {
+        panic!(
+            "{} env variable must be set",
+            server::config::keys::DATABASE_URL
+        )
+    });
 
     let server_port_env = env::var(server::config::keys::SERVER_PORT)
         .ok()

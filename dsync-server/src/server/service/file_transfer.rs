@@ -120,7 +120,6 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::internal("host-dst-addr-missing"));
         };
 
-        // FIXME: host_dst_addr most likely does not have port information attached
         let Ok(mut fts_client) = FileTransferServiceClient::connect(
             tools::net::ipv4_into_connection_addr(&host_data.ipv4_addr, defaults::SERVER_PORT),
         )
@@ -132,8 +131,8 @@ impl FileTransferService for FileTransferServiceImpl {
         let transfer_init_request = TransferInitRequest {
             file_path_src: request_inner.file_path_src,
             file_path_dst: request_inner.file_path_dst,
-            file_sha1: file_sha1,
-            file_size_bytes: file_size_bytes,
+            file_sha1,
+            file_size_bytes,
             chunk_size: 1024 * 8,
         };
 
@@ -142,10 +141,7 @@ impl FileTransferService for FileTransferServiceImpl {
             .await;
 
         let transfer_init_response = match result {
-            Ok(response) => {
-                let response = response.into_inner();
-                response
-            }
+            Ok(response) => response.into_inner(),
             Err(status) => {
                 // log::error!(format!("FTS at {} rejected transfer request: {}", &request_inner.host_dst_uuid, status));
                 return Err(tonic::Status::failed_precondition("fts-rejected"));
@@ -187,9 +183,7 @@ impl FileTransferService for FileTransferServiceImpl {
             session_id_raw
         };
 
-        Ok(tonic::Response::new(TransferInitResponse {
-            session_id: session_id.into(),
-        }))
+        Ok(tonic::Response::new(TransferInitResponse { session_id }))
     }
 
     async fn transfer_chunk(
@@ -218,6 +212,7 @@ impl FileTransferService for FileTransferServiceImpl {
         let file_handle = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&session.transfer_init_request.file_path_dst) // TODO: Sanitize path
             .await
             .unwrap();
@@ -311,13 +306,13 @@ impl FileTransferServiceImpl {
 
         let stream = stream! {
             let mut chunk_id = 0;
-            while let Some(read_count) = file_handle.read_buf(&mut buffer).await.ok() {
+            while let Ok(read_count) = file_handle.read_buf(&mut buffer).await {
                 if read_count == 0 {
                     break;
                 } else {
                     yield TransferChunkRequest {
                         session_id: init_response.session_id,
-                        chunk_id: chunk_id,
+                        chunk_id,
                         data_buffer: buffer.to_vec(), // FIXME: WE COPY HERE HARD
                     };
                     chunk_id += 1;

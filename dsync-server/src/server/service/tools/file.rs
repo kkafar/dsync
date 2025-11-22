@@ -82,9 +82,5 @@ pub fn check_binary_exists(binary_name: &str) -> bool {
         }
     };
 
-    if exit_status.success() {
-        return true;
-    } else {
-        return false;
-    }
+    exit_status.success()
 }

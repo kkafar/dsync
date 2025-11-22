@@ -67,9 +67,10 @@ impl UserAgentService for UserAgentServiceImpl {
         // 1 - verify that the file exists on the host
         // directories are yet unsupported.
         if !file_path.is_file() {
-            return Err(tonic::Status::invalid_argument(format!(
+            return Err(tonic::Status::invalid_argument(
                 "Not a file! File from request either does not exist or is not a regular file."
-            )));
+                    .to_string(),
+            ));
         }
 
         // 2 - compute file hash
@@ -401,7 +402,7 @@ impl UserAgentServiceImpl {
         };
 
         assert!(
-            remote_server_info.address == "".to_owned(),
+            remote_server_info.address.is_empty(),
             "Unexpected payload, expected empty address"
         );
 

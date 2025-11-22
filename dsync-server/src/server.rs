@@ -72,14 +72,14 @@ impl Server {
     fn create_this_server_info(&self) -> HostsRow {
         let hostname = self.get_hostname().expect("Error while resolving hostname");
 
-        return HostsRow {
+        HostsRow {
             uuid: Uuid::new_v4().to_string(),
             name: hostname.clone(),
-            hostname: hostname,
+            hostname,
             is_remote: false,
             ipv4_addr: String::from("127.0.0.1"),
             discovery_time: service::tools::time::get_current_timestamp(),
-        };
+        }
     }
 
     fn get_hostname(&self) -> anyhow::Result<String> {
@@ -90,10 +90,10 @@ impl Server {
             .expect("Failed to convert hostname command output to string")
             .trim()
             .to_string();
-        return anyhow::Ok(output_string);
+        anyhow::Ok(output_string)
     }
 
     fn get_server_addr(&self) -> SocketAddrV4 {
-        return SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.run_config.port as u16);
+        SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.run_config.port)
     }
 }
