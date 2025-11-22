@@ -32,7 +32,7 @@ pub(crate) async fn group_create(group_id: GroupId) -> anyhow::Result<()> {
                 println!(
                     "Seems that group with id {group_id} already exists. Use it or create a group with different id."
                 );
-                return Err(status.into());
+                Err(status.into())
             }
             _ => {
                 log::error!("Received ERROR response from server\n{status:?}");
@@ -64,11 +64,10 @@ pub(crate) async fn group_list(remote_id: Option<RemoteId>) -> anyhow::Result<()
             utils::print_local_group_info(&payload.into_inner().group_list);
             anyhow::Ok(())
         }
-        Err(status) => match status.code() {
-            _ => {
-                log::error!("Received ERROR response from server\n{status:?}");
-                bail!("Received ERROR response from server: {status:?}")
-            }
-        },
+        Err(status) => {
+            status.code();
+            log::error!("Received ERROR response from server\n{status:?}");
+            bail!("Received ERROR response from server: {status:?}")
+        }
     }
 }

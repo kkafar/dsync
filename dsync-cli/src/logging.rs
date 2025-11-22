@@ -26,6 +26,5 @@ pub(crate) fn configure_logging(cli_args: &Cli) -> log4rs::Handle {
         )
         .unwrap();
 
-    let handle = log4rs::init_config(logging_config).unwrap();
-    return handle;
+    log4rs::init_config(logging_config).unwrap()
 }

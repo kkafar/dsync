@@ -4,23 +4,20 @@ use dsync_proto::model::{
 };
 use prettytable::row;
 
-pub(super) fn print_servers_info(server_info_coll: &[HostInfo]) -> () {
+pub(super) fn print_servers_info(server_info_coll: &[HostInfo]) {
     use prettytable as pt;
 
     let mut table = pt::Table::new();
     table.add_row(row!["LID", "NAME", "HOSTNAME", "ADDR"]);
 
-    server_info_coll
-        .into_iter()
-        .enumerate()
-        .for_each(|(i, info)| {
-            table.add_row(row![i, info.name, info.hostname, info.address]);
-        });
+    server_info_coll.iter().enumerate().for_each(|(i, info)| {
+        table.add_row(row![i, info.name, info.hostname, info.address]);
+    });
 
     table.printstd();
 }
 
-pub(super) fn print_local_files_desc(file_descs: &[LocalFileDescription]) -> () {
+pub(super) fn print_local_files_desc(file_descs: &[LocalFileDescription]) {
     use prettytable as pt;
 
     let mut table = pt::Table::new();
