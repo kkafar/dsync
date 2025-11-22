@@ -11,9 +11,9 @@ impl SessionId {
     }
 }
 
-impl Into<i32> for SessionId {
-    fn into(self) -> i32 {
-        self.0
+impl From<SessionId> for i32 {
+    fn from(val: SessionId) -> Self {
+        val.0
     }
 }
 

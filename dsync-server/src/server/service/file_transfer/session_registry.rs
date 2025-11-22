@@ -28,7 +28,7 @@ impl FileTransferSessionRegistry {
             self.registry.swap_remove(position);
             return true;
         }
-        return false;
+        false
     }
 
     pub(crate) fn get_session(&self, session_id: SessionId) -> Option<FileTransferSession> {

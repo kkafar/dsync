@@ -22,7 +22,7 @@ fn extract_proto_files_from_dir_recursively(
         }
     }
 
-    return Ok(proto_files);
+    Ok(proto_files)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
