@@ -25,12 +25,12 @@ impl Commands {
     pub(crate) async fn handle(self) -> anyhow::Result<()> {
         match self {
             Self::Host(subcmd) => match subcmd {
-                host::HostCommand::List { discover } => command::host::host_list().await,
+                host::HostCommand::List { discover: _ } => command::host::host_list().await,
                 host::HostCommand::Discover => command::host::host_discover().await,
             },
             Self::File(subcmd) => match subcmd {
-                file::FileCommand::Add { path, group_id } => command::file::file_add(path).await,
-                file::FileCommand::Remove { path, group_id } => {
+                file::FileCommand::Add { path, group_id: _ } => command::file::file_add(path).await,
+                file::FileCommand::Remove { path, group_id: _ } => {
                     command::file::file_remove(&path).await
                 }
                 file::FileCommand::List {
@@ -55,10 +55,6 @@ impl Commands {
                     command::group::group_list(remote_id).await
                 }
             },
-            _ => {
-                log::error!("Unimplemented command!");
-                Err(anyhow::anyhow!("Unimplemented command"))
-            }
         }
     }
 }

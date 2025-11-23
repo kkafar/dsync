@@ -20,7 +20,7 @@ pub(crate) fn discover_hosts_in_local_network() -> Option<Vec<Ipv4Addr>> {
         .compute_list()
         .unwrap();
 
-    return Some(ipv4_list);
+    Some(ipv4_list)
 }
 
 pub trait CandidateAddressProvider {
@@ -52,9 +52,7 @@ impl CandidateAddressProvider for ArpAddressProvider {
         // Lines for existing & up hosts.
         let ipv4_list: Vec<Ipv4Addr> = output_string
             .lines()
-            .filter(|&line| {
-                return !line.contains("incomplete") && !line.contains("_gateway");
-            })
+            .filter(|&line| !line.contains("incomplete") && !line.contains("_gateway"))
             .filter_map(|line| {
                 let Some(left_brace_index) = line.find('(') else {
                     log::error!("Unexpected format of arp output line: {line}");
@@ -71,7 +69,7 @@ impl CandidateAddressProvider for ArpAddressProvider {
                 let ip_slice = &line[left_brace_index + 1..right_brace_index];
 
                 assert!(!ip_slice.is_empty());
-                return Some(ip_slice);
+                Some(ip_slice)
             })
             .map(|ip_slice| {
                 Ipv4Addr::from_str(ip_slice).inspect_err(|err| {
@@ -81,7 +79,7 @@ impl CandidateAddressProvider for ArpAddressProvider {
             .filter_map(Result::ok)
             .collect();
 
-        return Ok(ipv4_list);
+        Ok(ipv4_list)
     }
 }
 
@@ -113,8 +111,8 @@ impl CandidateAddressProvider for IpNeighAddressProvider {
         let ipv4_list = neigh_objects
             .into_iter()
             .filter(|neigh| {
-                return !neigh.dst.contains(":")
-                    && !["FAILED", "INCOMPLETE"].contains(&neigh.state.first().unwrap().as_str());
+                !neigh.dst.contains(":")
+                    && !["FAILED", "INCOMPLETE"].contains(&neigh.state.first().unwrap().as_str())
             })
             .map(|neigh| Ipv4Addr::from_str(&neigh.dst))
             .filter_map(Result::ok)
@@ -142,7 +140,7 @@ impl CandidateAddressProviderFactory {
             return Some(ip_neigh_provider);
         }
 
-        return None;
+        None
     }
 
     fn make_arp_provider(&self) -> Option<Box<dyn CandidateAddressProvider>> {
@@ -152,7 +150,7 @@ impl CandidateAddressProviderFactory {
             return None;
         }
 
-        return Some(Box::new(ArpAddressProvider));
+        Some(Box::new(ArpAddressProvider))
     }
 
     fn make_ip_neigh_provider(&self) -> Option<Box<dyn CandidateAddressProvider>> {
@@ -160,7 +158,7 @@ impl CandidateAddressProviderFactory {
             return None;
         }
 
-        return Some(Box::new(IpNeighAddressProvider));
+        Some(Box::new(IpNeighAddressProvider))
     }
 }
 

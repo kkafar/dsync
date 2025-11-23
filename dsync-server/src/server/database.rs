@@ -9,8 +9,12 @@ use dsync_proto::model::server::{GroupInfo, HostInfo};
 
 use error::{FileAddError, LocalServerBaseInfoError, SaveLocalGroupError};
 
-use crate::server::database::models::{
-    FilesLocalFragmentInsert, FilesLocalRow, GroupsLocalFragmentInsert, GroupsLocalRow, HostsRow,
+use crate::server::database::{
+    error::DeleteLocalGroupError,
+    models::{
+        FilesLocalFragmentInsert, FilesLocalRow, GroupsLocalFragmentInsert, GroupsLocalRow,
+        HostsRow,
+    },
 };
 
 pub(crate) mod error;
@@ -58,7 +62,7 @@ impl DatabaseProxy {
         }
 
         // Unwrap asserted above
-        return Ok(records.pop().unwrap());
+        Ok(records.pop().unwrap())
     }
 
     pub async fn ensure_db_record_exists(&self, server_info_factory: impl FnOnce() -> HostsRow) {
@@ -122,7 +126,7 @@ impl DatabaseProxy {
             }
         };
 
-        return Ok(row);
+        Ok(row)
     }
 
     pub async fn fetch_host_by_local_id(&self, _local_id: i32) -> anyhow::Result<HostsRow> {
@@ -155,20 +159,18 @@ impl DatabaseProxy {
         };
 
         match qr_result {
-            Ok(data) => {
-                return Ok(data
-                    .into_iter()
-                    .map(|host_info| HostInfo {
-                        uuid: host_info.uuid,
-                        name: host_info.name,
-                        hostname: host_info.hostname,
-                        address: host_info.ipv4_addr,
-                    })
-                    .collect());
-            }
+            Ok(data) => Ok(data
+                .into_iter()
+                .map(|host_info| HostInfo {
+                    uuid: host_info.uuid,
+                    name: host_info.name,
+                    hostname: host_info.hostname,
+                    address: host_info.ipv4_addr,
+                })
+                .collect()),
             Err(error) => {
                 log::error!("Error while fetching peer server information: {error}");
-                return Err(error.into());
+                Err(error.into())
             }
         }
     }
@@ -189,7 +191,7 @@ impl DatabaseProxy {
             anyhow::bail!("Failed to fetch the row");
         };
 
-        return Ok(row);
+        Ok(row)
     }
 
     pub async fn insert_hosts(&self, hosts_rows: &[HostsRow]) {
@@ -267,6 +269,26 @@ impl DatabaseProxy {
         anyhow::Ok(result)
     }
 
+    pub async fn delete_group_by_name(
+        &self,
+        group_name: &str,
+    ) -> Result<(), DeleteLocalGroupError> {
+        use schema::groups_local::dsl as gl;
+
+        let query_res = {
+            let mut conn = self.conn.lock().await;
+            diesel::delete(QueryDsl::filter(gl::groups_local, gl::name.eq(group_name)))
+                .execute(&mut *conn)
+                .map_err(|error| DeleteLocalGroupError::Other(error.into()))
+        }?;
+
+        if query_res == 0 {
+            Err(DeleteLocalGroupError::DoesNotExist)
+        } else {
+            Ok(())
+        }
+    }
+
     pub async fn save_local_group(&self, group_id: &str) -> Result<usize, SaveLocalGroupError> {
         use schema::groups_local as gl;
 
@@ -282,14 +304,15 @@ impl DatabaseProxy {
         match result {
             Ok(aff_rows) => Ok(aff_rows),
             Err(err) => match err {
-                diesel::result::Error::DatabaseError(db_err_kind, _) => match db_err_kind {
-                    diesel::result::DatabaseErrorKind::UniqueViolation => {
+                diesel::result::Error::DatabaseError(db_err_kind, _) => {
+                    if let diesel::result::DatabaseErrorKind::UniqueViolation = db_err_kind {
                         Err(SaveLocalGroupError::AlreadyExists {
                             group_id: group_id.into(),
                         })
+                    } else {
+                        Err(SaveLocalGroupError::Other)
                     }
-                    _ => Err(SaveLocalGroupError::Other),
-                },
+                }
                 _ => Err(SaveLocalGroupError::Other),
             },
         }
