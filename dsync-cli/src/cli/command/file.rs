@@ -10,7 +10,7 @@ pub(crate) enum FileCommand {
     /// this file can be synced by any remote peer.
     Add {
         /// Path to a local file
-        path: PathBuf,
+        paths: Vec<PathBuf>,
 
         /// Add the file to given group
         #[arg(short = 'g', long = "group")]
