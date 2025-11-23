@@ -30,7 +30,7 @@ pub(crate) async fn file_add(
         })
         .partition(|res| res.is_ok());
 
-    if !!error_paths.is_empty() {
+    if !error_paths.is_empty() {
         // TODO: Log & return all paths for which the canonicalization failed
         return Err(anyhow::anyhow!(
             "Failed to canonicalize {} paths",
