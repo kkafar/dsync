@@ -9,8 +9,12 @@ use dsync_proto::model::server::{GroupInfo, HostInfo};
 
 use error::{FileAddError, LocalServerBaseInfoError, SaveLocalGroupError};
 
-use crate::server::database::models::{
-    FilesLocalFragmentInsert, FilesLocalRow, GroupsLocalFragmentInsert, GroupsLocalRow, HostsRow,
+use crate::server::database::{
+    error::DeleteLocalGroupError,
+    models::{
+        FilesLocalFragmentInsert, FilesLocalRow, GroupsLocalFragmentInsert, GroupsLocalRow,
+        HostsRow,
+    },
 };
 
 pub(crate) mod error;
@@ -263,6 +267,26 @@ impl DatabaseProxy {
             .execute(conn_ref_mut)?;
 
         anyhow::Ok(result)
+    }
+
+    pub async fn delete_group_by_name(
+        &self,
+        group_name: &str,
+    ) -> Result<(), DeleteLocalGroupError> {
+        use schema::groups_local::dsl as gl;
+
+        let query_res = {
+            let mut conn = self.conn.lock().await;
+            diesel::delete(QueryDsl::filter(gl::groups_local, gl::name.eq(group_name)))
+                .execute(&mut *conn)
+                .map_err(|error| DeleteLocalGroupError::Other(error.into()))
+        }?;
+
+        if query_res == 0 {
+            Err(DeleteLocalGroupError::DoesNotExist)
+        } else {
+            Ok(())
+        }
     }
 
     pub async fn save_local_group(&self, group_id: &str) -> Result<usize, SaveLocalGroupError> {
