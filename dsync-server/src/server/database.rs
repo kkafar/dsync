@@ -217,6 +217,7 @@ impl DatabaseProxy {
         }
     }
 
+    #[allow(unused)]
     pub async fn save_local_file(
         &self,
         local_file: FilesLocalFragmentInsert,
@@ -234,6 +235,33 @@ impl DatabaseProxy {
                 diesel::result::Error::DatabaseError(kind, _extras) => match kind {
                     DatabaseErrorKind::UniqueViolation => Err(FileAddError::AlreadyExists {
                         file_name: local_file.file_path,
+                    }),
+                    _ => Err(FileAddError::OtherDatabaseError { kind }),
+                },
+                _ => Err(FileAddError::Other(error.into())),
+            },
+        }
+    }
+
+    pub async fn save_local_files(
+        &self,
+        local_files: &[FilesLocalFragmentInsert],
+    ) -> Result<(), FileAddError> {
+        use schema::files_local as fl;
+
+        let query_res = {
+            let mut connection = self.conn.lock().await;
+            diesel::insert_or_ignore_into(fl::table)
+                .values(local_files)
+                .execute(&mut *connection)
+        };
+
+        match query_res {
+            Ok(_) => Ok(()),
+            Err(error) => match error {
+                diesel::result::Error::DatabaseError(kind, _extras) => match kind {
+                    DatabaseErrorKind::UniqueViolation => Err(FileAddError::AlreadyExists {
+                        file_name: String::from("unknown"),
                     }),
                     _ => Err(FileAddError::OtherDatabaseError { kind }),
                 },

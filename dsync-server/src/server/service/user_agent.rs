@@ -50,76 +50,83 @@ impl UserAgentService for UserAgentServiceImpl {
         &self,
         request: Request<FileAddRequest>,
     ) -> Result<Response<FileAddResponse>, Status> {
-        let request_payload = request.into_inner();
+        let req_payload = request.into_inner();
 
         log::info!("Received FileAdd");
-        log::debug!("Payload: {request_payload:?}");
+        log::debug!("Payload: {req_payload:?}");
 
-        let file_path_string = request_payload.file_path;
-        let file_path = PathBuf::from(file_path_string);
-
-        if !file_path.is_absolute() {
-            return Err(tonic::Status::invalid_argument(
-                "File path must be absolute",
-            ));
+        if req_payload.file_paths.is_empty() {
+            return Ok(Response::new(FileAddResponse {}));
         }
 
-        // 1 - verify that the file exists on the host
-        // directories are yet unsupported.
-        if !file_path.is_file() {
-            return Err(tonic::Status::invalid_argument(
-                "Not a file! File from request either does not exist or is not a regular file."
-                    .to_string(),
-            ));
+        {
+            let invalid_paths = req_payload
+                .file_paths
+                .iter()
+                .filter_map(|path_str| {
+                    let path = PathBuf::from(path_str);
+                    if !path.is_absolute() || !path.is_file() {
+                        Some(path_str)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            if invalid_paths.len() > 0 {
+                return Err(Status::invalid_argument(format!(
+                    "Some file paths are invalid (not absolute or not a file): {:?}",
+                    invalid_paths
+                )));
+            }
         }
 
         // 2 - compute file hash
-        let hash = match tools::file::compute_sha1_hash_from_file(&file_path, None) {
-            Ok(hash) => hash,
-            Err(err) => {
-                log::warn!("Failed to compute hash for requested file with err: {err}");
-                return Err(tonic::Status::internal(format!(
-                    "Failed to compute hash for requested file with err: {err}"
-                )));
-            }
-        };
+        // TODO: TBH - do we need these hashes? We don't use them anywhere yet + they're not kept
+        // up to date in case the file changes (we need to observe inodes).
+        // This could potentially be done in multithreaded manner in case of many paths.
 
-        log::debug!("Hash computed for file: {hash}");
+        let hashes: Vec<String> = req_payload
+            .file_paths
+            .iter()
+            .filter_map(
+                |path_str| match tools::file::compute_sha1_hash_from_file(path_str, None) {
+                    Ok(hash) => Some(hash),
+                    Err(_) => None,
+                },
+            )
+            .collect();
 
-        let file_abs_path_string = match file_path.to_str() {
-            Some(abs_path_str) => abs_path_str.to_string(),
-            None => {
-                log::warn!("Failed to convert absolute file path to string");
-                return Err(tonic::Status::invalid_argument(
-                    "Failed to convert absolute file path to string",
-                ));
-            }
-        };
+        if hashes.len() != req_payload.file_paths.len() {
+            return Err(Status::internal("Failed to compute some hashes"));
+        }
+
+        let fragments = req_payload
+            .file_paths
+            .into_iter()
+            .zip(hashes.into_iter())
+            .map(|(file_path, hash)| FilesLocalFragmentInsert {
+                file_path,
+                hash_sha1: hash,
+            });
 
         // 3 - save file to the db
         let result = self
             .ctx
             .db_proxy
-            .save_local_file(FilesLocalFragmentInsert {
-                file_path: file_abs_path_string,
-                hash_sha1: hash,
-            })
+            .save_local_files(&fragments.collect::<Vec<FilesLocalFragmentInsert>>())
             .await;
 
         match result {
             Ok(_) => Ok(tonic::Response::new(FileAddResponse {})),
             Err(err) => match err {
-                FileAddError::AlreadyExists { file_name } => Err(tonic::Status::already_exists(
-                    format!("File: {file_name} is already tracked"),
+                FileAddError::AlreadyExists { file_name } => Err(Status::already_exists(format!(
+                    "File: {file_name} is already tracked"
+                ))),
+                FileAddError::OtherDatabaseError { kind } => Err(Status::failed_precondition(
+                    format!("Some other database error: {kind:?}"),
                 )),
-                FileAddError::OtherDatabaseError { kind } => {
-                    Err(tonic::Status::failed_precondition(format!(
-                        "Some other database error: {kind:?}"
-                    )))
-                }
-                FileAddError::Other(err) => {
-                    Err(tonic::Status::unknown(format!("Unknown error: {err}")))
-                }
+                FileAddError::Other(err) => Err(Status::unknown(format!("Unknown error: {err}"))),
             },
         }
     }
@@ -131,7 +138,7 @@ impl UserAgentService for UserAgentServiceImpl {
         let payload = request.into_inner();
 
         if payload.group_id.is_some() {
-            return Err(tonic::Status::unimplemented(
+            return Err(Status::unimplemented(
                 "Removing files from groups is not yet supported",
             ));
         }
@@ -146,7 +153,7 @@ impl UserAgentService for UserAgentServiceImpl {
             Err(err) => {
                 let message = format!("Error while attampting to remove a file: {err}");
                 log::warn!("{message}");
-                Err(tonic::Status::internal(message))
+                Err(Status::internal(message))
             }
         }
     }

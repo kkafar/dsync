@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::command::utils;
 use anyhow::Context;
@@ -12,27 +12,45 @@ use crate::command::model::LOOPBACK_ADDR_V4;
 
 use super::model::{GroupId, RemoteId};
 
-pub(crate) async fn file_add(file_path: impl AsRef<Path>) -> anyhow::Result<()> {
-    let file_path = file_path.as_ref();
-    let file_path_abs = match file_path.canonicalize() {
-        Ok(abs_path) => abs_path,
-        Err(err) => {
-            let message = format!(
-                "Failed to turn file_path: ${file_path:?} into absolute path with err: {err}"
-            );
-            log::error!("{message}");
-            return Err(anyhow::anyhow!(message));
-        }
-    };
+pub(crate) async fn file_add(
+    file_paths: Vec<impl AsRef<Path>>,
+    group_id: Option<String>,
+) -> anyhow::Result<()> {
+    let (ok_paths, error_paths): (Vec<_>, Vec<_>) = file_paths
+        .into_iter()
+        .map(|path| {
+            let path = path.as_ref();
+            path.canonicalize().map_err(|err| {
+                let message = format!(
+                    "Failed to turn file_path: ${path:?} into absolute path with err: {err}"
+                );
+                log::error!("{message}");
+                anyhow::anyhow!(message)
+            })
+        })
+        .partition(|res| res.is_ok());
 
-    let path_as_string = file_path_abs
-        .to_str()
-        .context("Looks like the specified path is not a valid unicode")?
-        .to_string();
+    if !error_paths.is_empty() {
+        // TODO: Log & return all paths for which the canonicalization failed
+        return Err(anyhow::anyhow!(
+            "Failed to canonicalize {} paths",
+            error_paths.len()
+        ));
+    }
+
+    let ok_paths = ok_paths
+        .into_iter()
+        .map(|res| {
+            res.unwrap()
+                .to_str()
+                .expect("Failed to convert path to string")
+                .to_string()
+        })
+        .collect::<Vec<String>>();
 
     let request = tonic::Request::new(FileAddRequest {
-        file_path: path_as_string,
-        group_id: None,
+        file_paths: ok_paths,
+        group_id: group_id,
     });
 
     let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
@@ -161,10 +179,10 @@ pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Re
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_sync() -> anyhow::Result<()> {
+pub(crate) async fn file_sync() -> Result<(), anyhow::Error> {
     todo!()
 }
 
-pub(crate) async fn file_unsync() -> anyhow::Result<()> {
+pub(crate) async fn file_unsync() -> Result<(), anyhow::Error> {
     todo!()
 }

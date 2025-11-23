@@ -5,7 +5,7 @@ use tokio::io::AsyncReadExt;
 pub fn compute_sha1_hash_from_file(
     file_path: impl AsRef<Path>,
     buffer_read_capacity: Option<usize>,
-) -> anyhow::Result<String> {
+) -> Result<String, anyhow::Error> {
     let path: &Path = file_path.as_ref();
 
     if !path.is_file() {

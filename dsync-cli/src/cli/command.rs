@@ -29,8 +29,10 @@ impl Commands {
                 host::HostCommand::Discover => command::host::host_discover().await,
             },
             Self::File(subcmd) => match subcmd {
-                file::FileCommand::Add { path, group_id: _ } => command::file::file_add(path).await,
-                file::FileCommand::Remove { path, group_id: _ } => {
+                file::FileCommand::Add { paths, group_id } => {
+                    command::file::file_add(paths, group_id).await
+                }
+                file::FileCommand::Remove { path, group_id } => {
                     command::file::file_remove(&path).await
                 }
                 file::FileCommand::List {
