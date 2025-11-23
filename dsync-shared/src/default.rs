@@ -1,0 +1,1 @@
+pub const DEFAULT_SERVER_PORT: u16 = 50051;

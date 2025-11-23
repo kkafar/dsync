@@ -1,9 +1,13 @@
 use anyhow::{Context, bail};
 use dsync_proto::services::user_agent::{
-    GroupCreateRequest, GroupListRequest, user_agent_service_client::UserAgentServiceClient,
+    GroupCreateRequest, GroupDeleteRequest, GroupListRequest,
+    user_agent_service_client::UserAgentServiceClient,
 };
 
-use crate::command::{model::LOOPBACK_ADDR_V4, utils};
+use crate::{
+    client::user_agent_service_conn_factory,
+    command::{model::LOOPBACK_ADDR_V4, utils},
+};
 
 use super::model::{GroupId, RemoteId};
 
@@ -42,8 +46,40 @@ pub(crate) async fn group_create(group_id: GroupId) -> anyhow::Result<()> {
     }
 }
 
-pub(crate) async fn group_delete(_group_id: GroupId) -> anyhow::Result<()> {
-    todo!()
+pub(crate) async fn group_delete(group_id: GroupId) -> Result<(), anyhow::Error> {
+    let request = tonic::Request::new(GroupDeleteRequest {
+        group_id: group_id.clone(),
+    });
+
+    let mut client = user_agent_service_conn_factory().await?;
+
+    log::trace!("Sending group_delete request to server: {:?}", &request);
+
+    let req_result = client.group_delete(request).await;
+
+    log::trace!(
+        "Received group_delete response from server: {:?}",
+        &req_result
+    );
+
+    match req_result {
+        Ok(_) => {
+            println!("Group '{}' deleted successfully", &group_id);
+        }
+        Err(status) => match status.code() {
+            tonic::Code::InvalidArgument | tonic::Code::NotFound => {
+                println!("Group '{}' does not exist", &group_id);
+            }
+            _ => {
+                println!(
+                    "Failed to delete group '{}' with error: {}",
+                    &group_id, &status
+                );
+            }
+        },
+    };
+
+    Ok(())
 }
 
 pub(crate) async fn group_list(remote_id: Option<RemoteId>) -> anyhow::Result<()> {
@@ -65,7 +101,6 @@ pub(crate) async fn group_list(remote_id: Option<RemoteId>) -> anyhow::Result<()
             anyhow::Ok(())
         }
         Err(status) => {
-            status.code();
             log::error!("Received ERROR response from server\n{status:?}");
             bail!("Received ERROR response from server: {status:?}")
         }
