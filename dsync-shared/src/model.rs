@@ -71,7 +71,7 @@ impl HostSpecWrapper {
     /// In that case I can not verify w/o additional knowledge whether this is localhost or not.
     pub fn try_is_localhost(&self) -> Option<bool> {
         match self.0 {
-            HostSpec::LocalId(id) if id == 0 => Some(true),
+            HostSpec::LocalId(0) => Some(true),
             HostSpec::LocalHost(_) => Some(true),
             HostSpec::Name(ref name) => {
                 if name == "localhost" {
@@ -105,11 +105,11 @@ impl From<FileSource> for FileSourceWrapper {
     }
 }
 
-impl Into<FileSource> for FileSourceWrapper {
-    fn into(self) -> FileSource {
+impl From<FileSourceWrapper> for FileSource {
+    fn from(val: FileSourceWrapper) -> Self {
         FileSource {
-            host_spec: Some(self.host_spec.0),
-            path_spec: Some(self.path_spec.0),
+            host_spec: Some(val.host_spec.0),
+            path_spec: Some(val.path_spec.0),
         }
     }
 }
@@ -130,8 +130,8 @@ pub fn parse_file_source_spec(spec: impl AsRef<str>) -> Result<FileSource, FileS
     let file_part = split_str.next().ok_or(FileSourceParseError::InvalidSpec)?;
 
     Ok(FileSource {
-        host_spec: Some(parse_file_source_host_spec(&host_part)?),
-        path_spec: Some(parse_file_source_path_spec(&file_part)?),
+        host_spec: Some(parse_file_source_host_spec(host_part)?),
+        path_spec: Some(parse_file_source_path_spec(file_part)?),
     })
 }
 
@@ -154,5 +154,5 @@ pub fn parse_file_source_host_spec(spec: &str) -> Result<HostSpec, FileSourcePar
         return Ok(HostSpec::LocalId(host_local_id));
     }
 
-    return Ok(HostSpec::Name(spec.to_owned()));
+    Ok(HostSpec::Name(spec.to_owned()))
 }

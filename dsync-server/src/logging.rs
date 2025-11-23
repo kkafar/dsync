@@ -31,5 +31,5 @@ pub(crate) fn configure_logging(log_level: log::LevelFilter) -> log4rs::Handle {
     let handle = log4rs::init_config(logging_config).unwrap();
 
     log::info!("Logging configured with level: {log_level}");
-    return handle;
+    handle
 }

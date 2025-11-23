@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::server::config::defaults;
-use crate::server::database::error::{FileAddError, SaveLocalGroupError};
+use crate::server::database::error::{DeleteLocalGroupError, FileAddError, SaveLocalGroupError};
 use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::service::tools;
 
@@ -32,14 +32,14 @@ use dsync_shared::model::FileSourceWrapper;
 use tonic::transport::Uri;
 use tonic::{Request, Response, Status};
 
-use crate::server::global_context::GlobalContext;
+use crate::server::context::ServerContext;
 
 pub struct UserAgentServiceImpl {
-    ctx: Arc<GlobalContext>,
+    ctx: Arc<ServerContext>,
 }
 
 impl UserAgentServiceImpl {
-    pub fn new(ctx: Arc<GlobalContext>) -> Self {
+    pub fn new(ctx: Arc<ServerContext>) -> Self {
         Self { ctx }
     }
 }
@@ -329,9 +329,26 @@ impl UserAgentService for UserAgentServiceImpl {
 
     async fn group_delete(
         &self,
-        _request: Request<GroupDeleteRequest>,
+        request: Request<GroupDeleteRequest>,
     ) -> Result<Response<GroupDeleteResponse>, Status> {
-        Err(tonic::Status::unimplemented("Not yet implemented"))
+        let payload = request.into_inner();
+
+        match self
+            .ctx
+            .db_proxy
+            .delete_group_by_name(&payload.group_id)
+            .await
+        {
+            Ok(_) => Ok(tonic::Response::new(GroupDeleteResponse {})),
+            Err(error) => match error {
+                DeleteLocalGroupError::DoesNotExist => Err(tonic::Status::invalid_argument(
+                    format!("Group `{}` does not exist", &payload.group_id),
+                )),
+                DeleteLocalGroupError::Other(error) => {
+                    Err(tonic::Status::internal(error.to_string()))
+                }
+            },
+        }
     }
 
     async fn group_list(
@@ -409,7 +426,7 @@ impl UserAgentServiceImpl {
         };
 
         assert!(
-            remote_server_info.address == "".to_owned(),
+            remote_server_info.address.is_empty(),
             "Unexpected payload, expected empty address"
         );
 

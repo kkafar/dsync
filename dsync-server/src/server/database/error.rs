@@ -32,3 +32,12 @@ pub(crate) enum FileAddError {
     #[error("Other error: `{0:?}`")]
     Other(anyhow::Error),
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum DeleteLocalGroupError {
+    #[error("No record in db for given group")]
+    DoesNotExist,
+
+    #[error("Other database error: `{0}`")]
+    Other(anyhow::Error),
+}
