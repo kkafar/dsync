@@ -1,0 +1,6 @@
+*.db
+target/
+.git/
+.github/
+.idea/
+.zed/
