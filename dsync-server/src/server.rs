@@ -11,8 +11,10 @@ use diesel::{Connection, SqliteConnection};
 use dsync_proto::services::{
     file_transfer::file_transfer_service_server::FileTransferServiceServer,
     host_discovery::host_discovery_service_server::HostDiscoveryServiceServer,
+    server_control::server_control_service_server::ServerControlServiceServer,
     user_agent::user_agent_service_server::UserAgentServiceServer,
 };
+use tokio::sync::oneshot;
 use uuid::Uuid;
 
 use database::models::HostsRow;
@@ -57,13 +59,19 @@ impl Server {
         let file_transfer_service =
             service::file_transfer::FileTransferServiceImpl::new(g_ctx.clone());
 
+        let (signal_tx, signal_rx) = tokio::sync::oneshot::channel::<()>();
+
+        let server_control_service =
+            service::server_control::ServerControlServiceImpl::new(g_ctx.clone(), signal_tx);
+
         log::info!("Starting server at {:?}", &server_addr);
 
         tonic::transport::Server::builder()
             .add_service(UserAgentServiceServer::new(user_agent_service_instance))
             .add_service(HostDiscoveryServiceServer::new(peer_service_instance))
             .add_service(FileTransferServiceServer::new(file_transfer_service))
-            .serve(server_addr.into())
+            .add_service(ServerControlServiceServer::new(server_control_service))
+            .serve_with_shutdown(server_addr.into(), Self::shutdown_feature(signal_rx))
             .await?;
 
         anyhow::Ok(())
@@ -95,5 +103,13 @@ impl Server {
 
     fn get_server_addr(&self) -> SocketAddrV4 {
         SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.run_config.port)
+    }
+
+    async fn shutdown_feature(signal_rx: oneshot::Receiver<()>) -> () {
+        if signal_rx.await.is_err() {
+            log::warn!(
+                "Shutdown signal sender has most likely been dropped w/o sending a message. This might mean that the shutdown mechanism is impaired."
+            );
+        }
     }
 }
