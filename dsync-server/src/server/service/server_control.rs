@@ -8,14 +8,14 @@ use tokio::sync::oneshot;
 use crate::server::context::ServerContext;
 
 pub struct ServerControlServiceImpl {
-    ctx: Arc<ServerContext>,
+    _ctx: Arc<ServerContext>,
     shutdown_sig: Mutex<Option<oneshot::Sender<()>>>,
 }
 
 impl ServerControlServiceImpl {
     pub fn new(ctx: Arc<ServerContext>, shutdown_sig: oneshot::Sender<()>) -> Self {
         Self {
-            ctx,
+            _ctx: ctx,
             shutdown_sig: Mutex::new(Some(shutdown_sig)),
         }
     }
@@ -27,6 +27,8 @@ impl ServerControlService for ServerControlServiceImpl {
         &self,
         _request: tonic::Request<ShutdownRequest>,
     ) -> Result<tonic::Response<ShutdownResponse>, tonic::Status> {
+        log::info!("Received shutdown request");
+
         // Extract the sender while holding the lock
         let shutdown_sig = {
             let mut sig_guard = self

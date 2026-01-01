@@ -111,5 +111,6 @@ impl Server {
                 "Shutdown signal sender has most likely been dropped w/o sending a message. This might mean that the shutdown mechanism is impaired."
             );
         }
+        log::info!("Requesting runtime shutdown");
     }
 }
