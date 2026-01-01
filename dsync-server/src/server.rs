@@ -22,7 +22,7 @@ pub mod context;
 pub mod database;
 pub(crate) mod service;
 
-pub(crate) struct Server {
+pub struct Server {
     run_config: RunConfiguration,
 }
 
