@@ -3,8 +3,9 @@
 use std::path::PathBuf;
 
 use dsync_proto::services::user_agent::{
-    FileSource,
-    file_source::{self, HostSpec, PathSpec},
+    FileSource, HostSpec,
+    file_source::{self, PathSpec},
+    host_spec,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -59,21 +60,29 @@ impl From<PathSpec> for PathSpecWrapper {
 pub struct HostSpecWrapper(pub HostSpec);
 
 impl HostSpecWrapper {
+    pub fn into_inner_kind(self) -> host_spec::Kind {
+        self.0.kind.expect("Required field")
+    }
+
+    pub fn inner_kind(&self) -> &host_spec::Kind {
+        self.0.kind.as_ref().expect("Required field")
+    }
+
     pub fn into_host_spec_string(self) -> String {
-        match self.0 {
-            HostSpec::LocalHost(_) => "localhost".to_owned(),
-            HostSpec::Name(name) => name,
-            HostSpec::LocalId(id) => id.to_string(),
+        match self.into_inner_kind() {
+            host_spec::Kind::LocalHost(_) => "localhost".to_owned(),
+            host_spec::Kind::Name(name) => name,
+            host_spec::Kind::LocalId(id) => id.to_string(),
         }
     }
 
     /// This method might fail, when user specified local host `hostname` or actual `name`.
     /// In that case I can not verify w/o additional knowledge whether this is localhost or not.
     pub fn try_is_localhost(&self) -> Option<bool> {
-        match self.0 {
-            HostSpec::LocalId(0) => Some(true),
-            HostSpec::LocalHost(_) => Some(true),
-            HostSpec::Name(ref name) => {
+        match self.inner_kind() {
+            host_spec::Kind::LocalId(0) => Some(true),
+            host_spec::Kind::LocalHost(_) => Some(true),
+            host_spec::Kind::Name(name) => {
                 if name == "localhost" {
                     Some(true)
                 } else {
@@ -88,6 +97,12 @@ impl HostSpecWrapper {
 impl From<HostSpec> for HostSpecWrapper {
     fn from(value: HostSpec) -> Self {
         Self(value)
+    }
+}
+
+impl From<&HostSpec> for HostSpecWrapper {
+    fn from(value: &HostSpec) -> Self {
+        Self(value.to_owned())
     }
 }
 
@@ -146,13 +161,19 @@ pub fn parse_file_source_path_spec(spec: &str) -> Result<PathSpec, FileSourcePar
 
 pub fn parse_file_source_host_spec(spec: &str) -> Result<HostSpec, FileSourceParseError> {
     if spec == "localhost" {
-        return Ok(HostSpec::LocalHost(0));
+        return Ok(HostSpec {
+            kind: Some(host_spec::Kind::LocalHost(0)),
+        });
     }
 
     let maybe_id = spec.parse::<i32>();
     if let Ok(host_local_id) = maybe_id {
-        return Ok(HostSpec::LocalId(host_local_id));
+        return Ok(HostSpec {
+            kind: Some(host_spec::Kind::LocalId(host_local_id)),
+        });
     }
 
-    Ok(HostSpec::Name(spec.to_owned()))
+    Ok(HostSpec {
+        kind: Some(host_spec::Kind::Name(spec.to_owned())),
+    })
 }

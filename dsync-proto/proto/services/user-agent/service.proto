@@ -17,6 +17,8 @@ service UserAgentService {
 
   rpc HostList(HostListRequest) returns (HostListResponse);
   rpc HostDiscover(HostDiscoverRequest) returns (HostDiscoverResponse);
+  rpc HostAdd(HostAddRequest) returns (HostAddResponse);
+  rpc HostRemove(HostRemoveRequest) returns (HostRemoveResponse);
 
   // Group management
 

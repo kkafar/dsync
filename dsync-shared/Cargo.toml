@@ -7,3 +7,4 @@ edition = "2024"
 dsync-proto = { path = "../dsync-proto" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+tonic = { workspace = true }

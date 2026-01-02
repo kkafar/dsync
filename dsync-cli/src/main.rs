@@ -1,5 +1,4 @@
 mod cli;
-mod client;
 mod command;
 mod logging;
 

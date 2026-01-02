@@ -12,7 +12,9 @@ use crate::server::service::tools;
 use anyhow::Context;
 use dsync_proto::model::common::LocalFileDescription;
 use dsync_proto::model::server::HostInfo;
-use dsync_proto::services::user_agent::file_source::HostSpec;
+use dsync_proto::services::user_agent::{
+    HostAddRequest, HostAddResponse, HostRemoveRequest, HostRemoveResponse, HostSpec, host_spec,
+};
 use dsync_proto::services::{
     file_transfer::{
         TransferSubmitRequest, file_transfer_service_client::FileTransferServiceClient,
@@ -28,6 +30,8 @@ use dsync_proto::services::{
         HostListResponse, user_agent_service_server::UserAgentService,
     },
 };
+use dsync_shared::DEFAULT_SERVER_PORT;
+use dsync_shared::conn::{ChannelFactory, create_server_url};
 use dsync_shared::model::FileSourceWrapper;
 use tonic::transport::Uri;
 use tonic::{Request, Response, Status};
@@ -302,6 +306,124 @@ impl UserAgentService for UserAgentServiceImpl {
         }));
     }
 
+    async fn host_add(
+        &self,
+        request: Request<HostAddRequest>,
+    ) -> Result<Response<HostAddResponse>, Status> {
+        // FIXME: This function has few problems:
+        // 1. We do not check whether requested server is exactly the same one
+        // as instance serving the request.
+        // 2. We need to actually store the port together with the address...
+        // Even if autodiscovery is not able to find remotes running on different
+        // ports than default, now it is possible to manually add them.
+
+        let payload = request.into_inner();
+
+        let host_ipv4 = match Ipv4Addr::from_str(&payload.ipv4_addr) {
+            Ok(addr) => addr,
+            Err(err) => {
+                return Err(Status::invalid_argument(format!(
+                    "failed-to-parse-host-ipv4: {err}"
+                )));
+            }
+        };
+
+        let port = if let Some(port) = payload.port {
+            match u16::try_from(port) {
+                Ok(port) => port,
+                Err(err) => {
+                    return Err(Status::invalid_argument(format!(
+                        "failed-to-parse-host-port: {err}"
+                    )));
+                }
+            }
+        } else {
+            DEFAULT_SERVER_PORT
+        };
+
+        let host_addr = SocketAddrV4::new(host_ipv4, port);
+
+        let mut client = HostDiscoveryServiceClient::new(
+            ChannelFactory::channel_with_timeout(
+                create_server_url(host_addr),
+                Duration::from_secs(5),
+            )
+            .await?,
+        );
+
+        let localhost_info = self.ctx.db_proxy.fetch_local_server_info().await?;
+
+        let result = client
+            .hello_there(HelloThereRequest {
+                host_info: Some(HostInfo {
+                    uuid: localhost_info.uuid,
+                    name: localhost_info.name,
+                    hostname: localhost_info.hostname,
+                    address: String::from(""),
+                }),
+            })
+            .await;
+
+        let response_payload = match result {
+            Ok(response) => response.into_inner(),
+            Err(err) => {
+                return Err(Status::unavailable(format!(
+                    "received-error-response: {err}"
+                )));
+            }
+        };
+
+        let host_info = response_payload.host_info.ok_or_else(|| {
+            Status::aborted("Remote host response had missing required field - host_info")
+        })?;
+
+        let host_row = HostsRow {
+            uuid: host_info.uuid.clone(),
+            name: host_info.name.clone(),
+            hostname: host_info.hostname.clone(),
+            is_remote: true,
+            ipv4_addr: host_addr.ip().to_string(),
+            discovery_time: tools::time::get_current_timestamp(),
+        };
+
+        self.ctx.db_proxy.insert_hosts(&[host_row]).await;
+        Ok(Response::new(HostAddResponse {
+            host_info: Some(host_info),
+        }))
+    }
+
+    async fn host_remove(
+        &self,
+        request: Request<HostRemoveRequest>,
+    ) -> Result<Response<HostRemoveResponse>, Status> {
+        let payload = request.into_inner();
+        let host_spec = payload
+            .host_spec
+            .ok_or_else(|| Status::invalid_argument("missing-host-spec"))?;
+
+        let host_info = self
+            .resolve_host_info_by_spec(&host_spec)
+            .await
+            .map_err(|err| {
+                Status::unknown(format!(
+                    "Failed to fetch requested remote info, likely it doesn't exist - {err}"
+                ))
+            })?;
+
+        if !host_info.is_remote {
+            return Err(Status::invalid_argument(
+                "Can not remove current server instance",
+            ));
+        }
+
+        self.ctx
+            .db_proxy
+            .delete_host_with_uuid(&host_info.uuid)
+            .await;
+
+        Ok(Response::new(HostRemoveResponse {}))
+    }
+
     async fn group_create(
         &self,
         request: Request<GroupCreateRequest>,
@@ -486,16 +608,16 @@ impl UserAgentServiceImpl {
     }
 
     async fn resolve_host_info_by_spec(&self, host_spec: &HostSpec) -> anyhow::Result<HostsRow> {
-        match host_spec {
-            HostSpec::LocalHost(_) => {
+        match host_spec.kind.as_ref().expect("Required field") {
+            host_spec::Kind::LocalHost(_) => {
                 let local_host_info = self.ctx.db_proxy.fetch_local_server_info().await?;
                 Ok(local_host_info)
             }
-            HostSpec::Name(name) => {
+            host_spec::Kind::Name(name) => {
                 let host_info = self.ctx.db_proxy.fetch_host_by_name(name).await?;
                 Ok(host_info)
             }
-            HostSpec::LocalId(id) => {
+            host_spec::Kind::LocalId(id) => {
                 let host_info = self.ctx.db_proxy.fetch_host_by_local_id(*id).await?;
                 Ok(host_info)
             }

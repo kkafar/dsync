@@ -41,3 +41,9 @@ pub enum DeleteLocalGroupError {
     #[error("Other database error: `{0}`")]
     Other(anyhow::Error),
 }
+
+impl From<LocalServerBaseInfoError> for tonic::Status {
+    fn from(value: LocalServerBaseInfoError) -> Self {
+        tonic::Status::internal(format!("{}", value))
+    }
+}

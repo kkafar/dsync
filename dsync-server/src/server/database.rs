@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use anyhow::Context;
 use diesel::{
     ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
-    result::DatabaseErrorKind,
+    query_dsl::methods::FilterDsl, result::DatabaseErrorKind,
 };
 use dsync_proto::model::server::{GroupInfo, HostInfo};
 
@@ -215,6 +215,17 @@ impl DatabaseProxy {
                 .execute(conn_ref_mut)
                 .expect("Failed to insert peer info to db");
         }
+    }
+
+    pub async fn delete_host_with_uuid(&self, host_uuid: &str) {
+        use schema::hosts::dsl as ht;
+
+        let mut connection = self.conn.lock().await;
+        let conn_ref_mut: &mut SqliteConnection = &mut connection;
+        let filtered_table = QueryDsl::filter(ht::hosts, ht::uuid.eq(host_uuid));
+        let _ = diesel::delete(filtered_table)
+            .execute(conn_ref_mut)
+            .expect("Failed to delete host from db");
     }
 
     #[allow(unused)]
