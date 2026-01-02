@@ -217,6 +217,17 @@ impl DatabaseProxy {
         }
     }
 
+    pub async fn delete_host_with_uuid(&self, host_uuid: &str) {
+        use schema::hosts::dsl as ht;
+
+        let mut connection = self.conn.lock().await;
+        let conn_ref_mut: &mut SqliteConnection = &mut connection;
+        let filtered_table = QueryDsl::filter(ht::hosts, ht::uuid.eq(host_uuid));
+        let _ = diesel::delete(filtered_table)
+            .execute(conn_ref_mut)
+            .expect("Failed to delete host from db");
+    }
+
     #[allow(unused)]
     pub async fn save_local_file(
         &self,

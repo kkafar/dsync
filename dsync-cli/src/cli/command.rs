@@ -21,7 +21,7 @@ pub(crate) enum Commands {
     #[command(subcommand)]
     Group(group::GroupCommand),
 
-    // Managee & configure server instance
+    /// Manage & configure server instance
     #[command(subcommand)]
     Server(server::ServerCommand),
 }
@@ -32,6 +32,10 @@ impl Commands {
             Self::Host(subcmd) => match subcmd {
                 host::HostCommand::List { discover: _ } => command::host::host_list().await,
                 host::HostCommand::Discover => command::host::host_discover().await,
+                host::HostCommand::Add { ipv4_addr } => command::host::host_add(ipv4_addr).await,
+                host::HostCommand::Remove { host_spec } => {
+                    command::host::host_remove(host_spec).await
+                }
             },
             Self::File(subcmd) => match subcmd {
                 file::FileCommand::Add { paths, group_id } => {

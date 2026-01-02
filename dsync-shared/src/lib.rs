@@ -1,3 +1,4 @@
+pub mod conn;
 pub mod core;
 pub mod default;
 pub mod model;

@@ -45,6 +45,18 @@ message HostDiscoverRequest {}
 
 message HostDiscoverResponse { repeated model.server.HostInfo host_list = 1; }
 
+message HostAddRequest {
+  // Accepted format: IPV4
+  string ipv4_addr = 1;
+  optional uint32 port = 2;
+}
+
+message HostAddResponse { model.server.HostInfo host_info = 1; }
+
+message HostRemoveRequest { services.user_agent.HostSpec host_spec = 1; }
+
+message HostRemoveResponse {}
+
 message GroupCreateRequest { string group_id = 1; }
 
 message GroupCreateResponse {}

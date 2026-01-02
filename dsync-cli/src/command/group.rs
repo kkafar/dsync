@@ -1,13 +1,8 @@
-use anyhow::{Context, bail};
-use dsync_proto::services::user_agent::{
-    GroupCreateRequest, GroupDeleteRequest, GroupListRequest,
-    user_agent_service_client::UserAgentServiceClient,
-};
+use anyhow::bail;
+use dsync_proto::services::user_agent::{GroupCreateRequest, GroupDeleteRequest, GroupListRequest};
+use dsync_shared::conn::ServiceConnFactory;
 
-use crate::{
-    client::user_agent_service_conn_factory,
-    command::{model::LOOPBACK_ADDR_V4, utils},
-};
+use crate::command::utils;
 
 use super::model::{GroupId, RemoteId};
 
@@ -16,9 +11,7 @@ pub(crate) async fn group_create(group_id: GroupId) -> anyhow::Result<()> {
         group_id: group_id.clone(),
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -51,7 +44,7 @@ pub(crate) async fn group_delete(group_id: GroupId) -> Result<(), anyhow::Error>
         group_id: group_id.clone(),
     });
 
-    let mut client = user_agent_service_conn_factory().await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::trace!("Sending group_delete request to server: {:?}", &request);
 
@@ -85,9 +78,7 @@ pub(crate) async fn group_delete(group_id: GroupId) -> Result<(), anyhow::Error>
 pub(crate) async fn group_list(remote_id: Option<RemoteId>) -> anyhow::Result<()> {
     let request = tonic::Request::new(GroupListRequest { remote_id });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
