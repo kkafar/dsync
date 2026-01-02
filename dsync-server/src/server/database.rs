@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use anyhow::Context;
 use diesel::{
     ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
-    query_dsl::methods::FilterDsl, result::DatabaseErrorKind,
+    result::DatabaseErrorKind,
 };
 use dsync_proto::model::server::{GroupInfo, HostInfo};
 
