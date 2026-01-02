@@ -1,14 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::command::utils;
 use anyhow::Context;
 use dsync_proto::services::user_agent::{
     FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
-    user_agent_service_client::UserAgentServiceClient,
 };
-use dsync_shared::model::{FileSourceWrapper, parse_file_source_spec};
-
-use crate::command::model::LOOPBACK_ADDR_V4;
+use dsync_shared::{
+    conn::ServiceConnFactory,
+    model::{FileSourceWrapper, parse_file_source_spec},
+};
 
 use super::model::{GroupId, RemoteId};
 
@@ -50,12 +50,10 @@ pub(crate) async fn file_add(
 
     let request = tonic::Request::new(FileAddRequest {
         file_paths: ok_paths,
-        group_id: group_id,
+        group_id,
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -92,9 +90,7 @@ pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<(
         group_id: None,
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -124,9 +120,7 @@ pub(crate) async fn file_list(
         group_id: None,
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -164,9 +158,7 @@ pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Re
         dst_spec: Some(file_source_dst.into()),
     });
 
-    let mut client = UserAgentServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");

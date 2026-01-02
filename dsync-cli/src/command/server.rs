@@ -1,16 +1,11 @@
-use anyhow::{Context, bail};
-use dsync_proto::services::server_control::{
-    ShutdownRequest, server_control_service_client::ServerControlServiceClient,
-};
-
-use crate::command::model::LOOPBACK_ADDR_V4;
+use anyhow::bail;
+use dsync_proto::services::server_control::ShutdownRequest;
+use dsync_shared::conn::ServiceConnFactory;
 
 pub(crate) async fn server_shutdown() -> Result<(), anyhow::Error> {
     let request = tonic::Request::new(ShutdownRequest {});
 
-    let mut client = ServerControlServiceClient::connect(LOOPBACK_ADDR_V4)
-        .await
-        .context("Failed to connect to server")?;
+    let mut client = ServiceConnFactory::local_server_control_service(None).await?;
 
     log::trace!("Sending request to server");
     log::debug!("{request:?}");

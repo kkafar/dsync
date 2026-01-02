@@ -3,7 +3,10 @@ use std::{
     time::Duration,
 };
 
-use dsync_proto::services::user_agent::user_agent_service_client::UserAgentServiceClient;
+use dsync_proto::services::{
+    server_control::server_control_service_client::ServerControlServiceClient,
+    user_agent::user_agent_service_client::UserAgentServiceClient,
+};
 use tonic::transport::Channel;
 
 use crate::DEFAULT_SERVER_PORT;
@@ -70,5 +73,25 @@ impl ChannelFactory {
                 "Failed to connect to an endpoint: {endpoint:?} with err: {err}"
             ))
         })
+    }
+}
+
+pub struct ServiceConnFactory {}
+
+impl ServiceConnFactory {
+    pub async fn local_user_agent_service(
+        port: Option<u16>,
+    ) -> Result<UserAgentServiceClient<Channel>, tonic::Status> {
+        let port = port.unwrap_or(DEFAULT_SERVER_PORT);
+        let channel = ChannelFactory::channel(local_server_url(Some(port))).await?;
+        Ok(UserAgentServiceClient::new(channel))
+    }
+
+    pub async fn local_server_control_service(
+        port: Option<u16>,
+    ) -> Result<ServerControlServiceClient<Channel>, tonic::Status> {
+        let port = port.unwrap_or(DEFAULT_SERVER_PORT);
+        let channel = ChannelFactory::channel(local_server_url(Some(port))).await?;
+        Ok(ServerControlServiceClient::new(channel))
     }
 }
