@@ -5,7 +5,6 @@ mod server;
 
 use crate::command;
 
-use anyhow::bail;
 use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
@@ -22,7 +21,7 @@ pub(crate) enum Commands {
     #[command(subcommand)]
     Group(group::GroupCommand),
 
-    // Managee & configure server instance
+    /// Manage & configure server instance
     #[command(subcommand)]
     Server(server::ServerCommand),
 }
