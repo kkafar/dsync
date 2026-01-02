@@ -1,6 +1,7 @@
 mod file;
 mod group;
 mod host;
+mod server;
 
 use crate::command;
 
@@ -19,6 +20,10 @@ pub(crate) enum Commands {
     /// Manage & display file groups.
     #[command(subcommand)]
     Group(group::GroupCommand),
+
+    // Managee & configure server instance
+    #[command(subcommand)]
+    Server(server::ServerCommand),
 }
 
 impl Commands {
@@ -32,7 +37,7 @@ impl Commands {
                 file::FileCommand::Add { paths, group_id } => {
                     command::file::file_add(paths, group_id).await
                 }
-                file::FileCommand::Remove { path, group_id } => {
+                file::FileCommand::Remove { path, group_id: _ } => {
                     command::file::file_remove(&path).await
                 }
                 file::FileCommand::List {
@@ -56,6 +61,9 @@ impl Commands {
                 group::GroupCommand::List { remote_id } => {
                     command::group::group_list(remote_id).await
                 }
+            },
+            Self::Server(subcmd) => match subcmd {
+                server::ServerCommand::Shutdown {} => command::server::server_shutdown().await,
             },
         }
     }

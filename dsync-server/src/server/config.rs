@@ -2,13 +2,13 @@
 
 use std::path::PathBuf;
 
-pub(crate) mod defaults {
+pub mod defaults {
     pub const SERVER_PORT: u16 = 50051;
     pub const ADDR_LOOPBACK_V4: &str = "127.0.0.1";
     pub const ADDR_ALL_INTERFACES_V4: &str = "0.0.0.0";
 }
 
-pub(crate) mod keys {
+pub mod keys {
     pub const DATABASE_URL: &str = "DATABASE_URL";
     pub const ENV_FILE: &str = "ENV_FILE";
     pub const SERVER_PORT: &str = "SERVER_PORT";
@@ -16,7 +16,7 @@ pub(crate) mod keys {
 
 /// Running configuration for the server.
 #[derive(Debug)]
-pub(crate) struct RunConfiguration {
+pub struct RunConfiguration {
     /// Port the server should listen on.
     pub port: u16,
 

@@ -13,6 +13,10 @@ pub mod services {
     pub mod user_agent {
         include!("../proto-generated/services.user_agent.rs");
     }
+
+    pub mod server_control {
+        include!("../proto-generated/services.server_control.rs");
+    }
 }
 
 pub mod model {

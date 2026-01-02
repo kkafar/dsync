@@ -1,0 +1,18 @@
+syntax = "proto3";
+package services.server_control;
+
+import "services/server-control/messages.proto";
+
+// Methods for controlling the server instance.
+service ServerControlService {
+  // Request shutdown of the server.
+  //
+  // Ideally this request should be handled only
+  // when originating from localhost. Shutting down the server from remote
+  // host / client should not be allowed.
+  //
+  // Successful response does not mean that the server will shutdown.
+  // It only means that the server acknowledged the shutdown request,
+  // and on best-effort basis will try to honour the request.
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}

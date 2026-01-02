@@ -1,13 +1,12 @@
-mod cli;
-mod logging;
-mod server;
-
 use std::{env, path::PathBuf};
 
 use clap::Parser;
-use cli::Args;
+use dsync_server::server;
 
-use crate::server::config::defaults;
+mod cli;
+mod logging;
+
+use crate::{cli::Args, server::config::defaults};
 
 fn load_env(maybe_env_file: Option<&std::path::PathBuf>) -> anyhow::Result<std::path::PathBuf> {
     log::info!("Loading env...");
