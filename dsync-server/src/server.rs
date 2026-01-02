@@ -47,22 +47,22 @@ impl Server {
 
         let server_addr = self.get_server_addr();
 
-        let g_ctx = Arc::new(ServerContext {
+        let srv_ctx = Arc::new(ServerContext {
             run_config: self.run_config,
             db_proxy: Arc::new(db_proxy),
         });
 
         let user_agent_service_instance =
-            service::user_agent::UserAgentServiceImpl::new(g_ctx.clone());
+            service::user_agent::UserAgentServiceImpl::new(srv_ctx.clone());
         let peer_service_instance =
-            service::host_discovery::HostDiscoveryServiceImpl::new(g_ctx.clone());
+            service::host_discovery::HostDiscoveryServiceImpl::new(srv_ctx.clone());
         let file_transfer_service =
-            service::file_transfer::FileTransferServiceImpl::new(g_ctx.clone());
+            service::file_transfer::FileTransferServiceImpl::new(srv_ctx.clone());
 
         let (signal_tx, signal_rx) = tokio::sync::oneshot::channel::<()>();
 
         let server_control_service =
-            service::server_control::ServerControlServiceImpl::new(g_ctx.clone(), signal_tx);
+            service::server_control::ServerControlServiceImpl::new(srv_ctx.clone(), signal_tx);
 
         log::info!("Starting server at {:?}", &server_addr);
 
