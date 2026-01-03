@@ -196,6 +196,9 @@ impl UserAgentService for UserAgentServiceImpl {
     ) -> Result<Response<FileCopyResponse>, Status> {
         let request = request.into_inner();
 
+        log::info!("Received file_copy request");
+        log::debug!("{:?}", &request);
+
         if request.src_spec.is_none() {
             return Err(tonic::Status::invalid_argument("missing-src-spec"));
         }
