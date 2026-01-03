@@ -56,6 +56,8 @@ pub fn load_env(maybe_env_file: Option<PathBuf>) -> Result<PathBuf, dotenvy::Err
     }
 }
 
+/// Load configuration from multiple providers. Providers are tried in order,
+/// therefore lower-indexed providers take precedence.
 pub fn load_config(providers: &[&dyn PartialConfigProvider]) -> Result<Config, anyhow::Error> {
     let mut config = PartialConfig::default();
 
