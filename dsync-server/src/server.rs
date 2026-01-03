@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use config::RunConfiguration;
+use config::Config;
 use context::ServerContext;
 use database::DatabaseProxy;
 use diesel::{Connection, SqliteConnection};
@@ -25,20 +25,19 @@ pub mod database;
 pub(crate) mod service;
 
 pub struct Server {
-    run_config: RunConfiguration,
+    cfg: Config,
 }
 
 impl Server {
-    pub fn new(run_config: RunConfiguration) -> Self {
-        Self { run_config }
+    pub fn new(cfg: Config) -> Self {
+        Self { cfg }
     }
 
     pub async fn run(self) -> anyhow::Result<()> {
         log::info!("Starting the server instance");
 
-        let connection =
-            SqliteConnection::establish(self.run_config.database_url.to_str().unwrap())
-                .expect("Failed to open db connection");
+        let connection = SqliteConnection::establish(self.cfg.database_url.to_str().unwrap())
+            .expect("Failed to open db connection");
 
         let db_proxy = DatabaseProxy::new(connection);
         db_proxy
@@ -48,7 +47,7 @@ impl Server {
         let server_addr = self.get_server_addr();
 
         let srv_ctx = Arc::new(ServerContext {
-            run_config: self.run_config,
+            cfg: self.cfg,
             db_proxy: Arc::new(db_proxy),
         });
 
@@ -102,7 +101,7 @@ impl Server {
     }
 
     fn get_server_addr(&self) -> SocketAddrV4 {
-        SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.run_config.port)
+        SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.cfg.port)
     }
 
     async fn shutdown_feature(signal_rx: oneshot::Receiver<()>) -> () {

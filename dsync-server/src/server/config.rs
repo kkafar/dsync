@@ -16,13 +16,10 @@ pub mod keys {
 
 /// Running configuration for the server.
 #[derive(Debug)]
-pub struct RunConfiguration {
+pub struct Config {
     /// Port the server should listen on.
     pub port: u16,
 
     /// Path to local storage database.
     pub database_url: PathBuf,
-
-    /// Environment file that was used to load-up the envvars.
-    pub env_file_path: PathBuf,
 }
