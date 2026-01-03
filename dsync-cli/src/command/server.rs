@@ -1,11 +1,13 @@
+use crate::config::Config;
 use anyhow::bail;
 use dsync_proto::services::server_control::ShutdownRequest;
 use dsync_shared::conn::ServiceConnFactory;
 
-pub(crate) async fn server_shutdown() -> Result<(), anyhow::Error> {
+pub(crate) async fn server_shutdown(cfg: &Config) -> Result<(), anyhow::Error> {
     let request = tonic::Request::new(ShutdownRequest {});
 
-    let mut client = ServiceConnFactory::local_server_control_service(None).await?;
+    let mut client =
+        ServiceConnFactory::local_server_control_service(Some(cfg.server_port)).await?;
 
     log::trace!("Sending request to server");
     log::debug!("{request:?}");

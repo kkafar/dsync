@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::command::utils;
+use crate::config::Config;
 use anyhow::Context;
 use dsync_proto::services::user_agent::{
     FileAddRequest, FileCopyRequest, FileListRequest, FileRemoveRequest,
@@ -13,6 +14,7 @@ use dsync_shared::{
 use super::model::{GroupId, RemoteId};
 
 pub(crate) async fn file_add(
+    cfg: &Config,
     file_paths: Vec<impl AsRef<Path>>,
     group_id: Option<String>,
 ) -> anyhow::Result<()> {
@@ -53,7 +55,7 @@ pub(crate) async fn file_add(
         group_id,
     });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -66,7 +68,7 @@ pub(crate) async fn file_add(
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<()> {
+pub(crate) async fn file_remove(cfg: &Config, file_path: impl AsRef<Path>) -> anyhow::Result<()> {
     let file_path = file_path.as_ref();
 
     let file_path_abs = match file_path.canonicalize() {
@@ -90,7 +92,7 @@ pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<(
         group_id: None,
     });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -104,6 +106,7 @@ pub(crate) async fn file_remove(file_path: impl AsRef<Path>) -> anyhow::Result<(
 }
 
 pub(crate) async fn file_list(
+    cfg: &Config,
     remote_id: Option<RemoteId>,
     group_id: Option<GroupId>,
 ) -> anyhow::Result<()> {
@@ -120,7 +123,7 @@ pub(crate) async fn file_list(
         group_id: None,
     });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -137,7 +140,11 @@ pub(crate) async fn file_list(
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Result<()> {
+pub(crate) async fn file_copy(
+    cfg: &Config,
+    source: String,
+    destination: String,
+) -> anyhow::Result<()> {
     let mut file_source_src: FileSourceWrapper = parse_file_source_spec(&source)?.into();
     let mut file_source_dst: FileSourceWrapper = parse_file_source_spec(&destination)?.into();
 
@@ -158,7 +165,7 @@ pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Re
         dst_spec: Some(file_source_dst.into()),
     });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -171,10 +178,10 @@ pub(crate) async fn file_copy(source: String, destination: String) -> anyhow::Re
     anyhow::Ok(())
 }
 
-pub(crate) async fn file_sync() -> Result<(), anyhow::Error> {
+pub(crate) async fn file_sync(_cfg: &crate::config::Config) -> Result<(), anyhow::Error> {
     todo!()
 }
 
-pub(crate) async fn file_unsync() -> Result<(), anyhow::Error> {
+pub(crate) async fn file_unsync(_cfg: &crate::config::Config) -> Result<(), anyhow::Error> {
     todo!()
 }
