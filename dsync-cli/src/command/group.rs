@@ -3,15 +3,16 @@ use dsync_proto::services::user_agent::{GroupCreateRequest, GroupDeleteRequest, 
 use dsync_shared::conn::ServiceConnFactory;
 
 use crate::command::utils;
+use crate::config::Config;
 
 use super::model::{GroupId, RemoteId};
 
-pub(crate) async fn group_create(group_id: GroupId) -> anyhow::Result<()> {
+pub(crate) async fn group_create(cfg: &Config, group_id: GroupId) -> anyhow::Result<()> {
     let request = tonic::Request::new(GroupCreateRequest {
         group_id: group_id.clone(),
     });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");
@@ -39,12 +40,12 @@ pub(crate) async fn group_create(group_id: GroupId) -> anyhow::Result<()> {
     }
 }
 
-pub(crate) async fn group_delete(group_id: GroupId) -> Result<(), anyhow::Error> {
+pub(crate) async fn group_delete(cfg: &Config, group_id: GroupId) -> Result<(), anyhow::Error> {
     let request = tonic::Request::new(GroupDeleteRequest {
         group_id: group_id.clone(),
     });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::trace!("Sending group_delete request to server: {:?}", &request);
 
@@ -75,10 +76,10 @@ pub(crate) async fn group_delete(group_id: GroupId) -> Result<(), anyhow::Error>
     Ok(())
 }
 
-pub(crate) async fn group_list(remote_id: Option<RemoteId>) -> anyhow::Result<()> {
+pub(crate) async fn group_list(cfg: &Config, remote_id: Option<RemoteId>) -> anyhow::Result<()> {
     let request = tonic::Request::new(GroupListRequest { remote_id });
 
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     log::info!("Sending request to server");
     log::debug!("{request:?}");

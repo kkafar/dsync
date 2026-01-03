@@ -6,9 +6,10 @@ use dsync_proto::services::user_agent::{
 use dsync_shared::{conn::ServiceConnFactory, model::parse_file_source_host_spec};
 
 use crate::command::utils;
+use crate::config::Config;
 
-pub(crate) async fn host_list() -> anyhow::Result<()> {
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+pub(crate) async fn host_list(cfg: &Config) -> anyhow::Result<()> {
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     let request = tonic::Request::new(HostListRequest { discover: false });
 
@@ -26,8 +27,8 @@ pub(crate) async fn host_list() -> anyhow::Result<()> {
     anyhow::Ok(())
 }
 
-pub(crate) async fn host_discover() -> anyhow::Result<()> {
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+pub(crate) async fn host_discover(cfg: &Config) -> anyhow::Result<()> {
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     let request = tonic::Request::new(HostDiscoverRequest {});
 
@@ -44,8 +45,8 @@ pub(crate) async fn host_discover() -> anyhow::Result<()> {
     anyhow::Ok(())
 }
 
-pub(crate) async fn host_add(host_addr: String) -> Result<(), anyhow::Error> {
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+pub(crate) async fn host_add(cfg: &Config, host_addr: String) -> Result<(), anyhow::Error> {
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     let host_addr_spec = parse_host_addr_spec(&host_addr)?;
 
@@ -73,8 +74,8 @@ pub(crate) async fn host_add(host_addr: String) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-pub(crate) async fn host_remove(host_spec: String) -> Result<(), anyhow::Error> {
-    let mut client = ServiceConnFactory::local_user_agent_service(None).await?;
+pub(crate) async fn host_remove(cfg: &Config, host_spec: String) -> Result<(), anyhow::Error> {
+    let mut client = ServiceConnFactory::local_user_agent_service(Some(cfg.server_port)).await?;
 
     let host_spec = parse_file_source_host_spec(&host_spec)?;
 
