@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 #[command(about)]
 pub(crate) struct Args {
     #[arg(
