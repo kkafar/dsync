@@ -28,9 +28,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ])
     .context("Failed to load configuration")?;
 
-    let server_instance = server::Server::new(config);
-
-    server_instance.run().await?;
-
+    server::Server::new(config).run().await?;
     return Ok(());
 }
