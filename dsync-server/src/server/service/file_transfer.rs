@@ -5,9 +5,11 @@ pub(crate) mod session_factory;
 pub(crate) mod session_registry;
 
 use std::{
+    net::{Ipv4Addr, SocketAddrV4},
     path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
+    time::Duration,
 };
 
 use async_stream::stream;
@@ -17,6 +19,7 @@ use dsync_proto::services::file_transfer::{
     file_transfer_service_client::FileTransferServiceClient,
     file_transfer_service_server::FileTransferService,
 };
+use dsync_shared::conn::{ChannelFactory, create_server_url};
 use tokio::{
     fs::{File, OpenOptions, metadata},
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt, BufWriter},
@@ -128,13 +131,20 @@ impl FileTransferService for FileTransferServiceImpl {
         log::debug!("AFTER host_data retrieval");
 
         log::debug!("BEFORE connecting FTS at {:?}", &host_data.ipv4_addr);
-        let Ok(mut fts_client) = FileTransferServiceClient::connect(
-            tools::net::ipv4_into_connection_addr(&host_data.ipv4_addr, defaults::SERVER_PORT),
+
+        let connection = ChannelFactory::channel_with_timeout(
+            create_server_url(SocketAddrV4::new(
+                Ipv4Addr::from_str(host_data.ipv4_addr.as_str())
+                    .expect("Failed to convert to ipv4"),
+                defaults::SERVER_PORT,
+            )),
+            Duration::from_secs(5),
         )
         .await
-        else {
-            return Err(tonic::Status::failed_precondition("fts-connection-fail"));
-        };
+        .map_err(|err| tonic::Status::failed_precondition(format!("fts-connection-fail: {err}")))?;
+
+        let mut fts_client = FileTransferServiceClient::new(connection);
+
         log::debug!("AFTER connecting FTS at {:?}", &host_data.ipv4_addr);
 
         let transfer_init_request = TransferInitRequest {
