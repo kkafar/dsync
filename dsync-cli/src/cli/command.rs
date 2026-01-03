@@ -4,6 +4,7 @@ mod host;
 mod server;
 
 use crate::command;
+use crate::config::Config;
 
 use clap::Subcommand;
 
@@ -27,7 +28,7 @@ pub(crate) enum Commands {
 }
 
 impl Commands {
-    pub(crate) async fn handle(self) -> anyhow::Result<()> {
+    pub(crate) async fn handle(self, cfg: &Config) -> anyhow::Result<()> {
         match self {
             Self::Host(subcmd) => match subcmd {
                 host::HostCommand::List { discover: _ } => command::host::host_list().await,
@@ -67,7 +68,7 @@ impl Commands {
                 }
             },
             Self::Server(subcmd) => match subcmd {
-                server::ServerCommand::Shutdown {} => command::server::server_shutdown().await,
+                server::ServerCommand::Shutdown {} => command::server::server_shutdown(cfg).await,
             },
         }
     }
