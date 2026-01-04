@@ -6,8 +6,8 @@ use std::{
 
 use config::Config;
 use context::ServerContext;
-use data::repo::{DataRepository, MainRepository};
-use data::source::SqliteLocalMainDataSource;
+use data::repo::{DataRepository, MainDataRepository};
+use data::source::SqliteDataSource;
 use diesel::{Connection, SqliteConnection};
 use dsync_proto::services::{
     file_transfer::file_transfer_service_server::FileTransferServiceServer,
@@ -42,8 +42,9 @@ impl Server {
             .expect("Failed to open db connection");
 
         let sqlite_ds =
-            SqliteLocalMainDataSource::new(connection, || self.create_this_server_info()).await?;
-        let repo_arc: Arc<dyn DataRepository> = Arc::new(MainRepository::new(Box::new(sqlite_ds)));
+            SqliteDataSource::new(connection, || self.create_this_server_info()).await?;
+        let repo_arc: Arc<dyn DataRepository> =
+            Arc::new(MainDataRepository::new(Box::new(sqlite_ds)));
 
         let server_addr = self.get_server_addr();
 
