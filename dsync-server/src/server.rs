@@ -18,12 +18,11 @@ use dsync_proto::services::{
 use tokio::sync::oneshot;
 use uuid::Uuid;
 
-use database::models::HostsRow;
+use crate::server::data::source::sqlite::database::models::HostsRow;
 
 pub mod config;
 pub mod context;
-pub mod data;
-pub mod database;
+pub(crate) mod data;
 pub(crate) mod service;
 
 pub struct Server {

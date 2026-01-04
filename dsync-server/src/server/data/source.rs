@@ -1,9 +1,9 @@
-mod sqlite;
+pub(crate) mod sqlite;
 
 use dsync_proto::model::server::{GroupInfo, HostInfo};
 pub use sqlite::SqliteDataSource;
 
-use crate::server::database::{
+use crate::server::data::source::sqlite::database::{
     error::{DeleteLocalGroupError, FileAddError, LocalServerBaseInfoError, SaveLocalGroupError},
     models::{FilesLocalFragmentInsert, FilesLocalRow, HostsRow},
 };

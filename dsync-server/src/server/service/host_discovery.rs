@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
 use crate::server::context::ServerContext;
-use crate::server::database::models::HostsRow;
+use crate::server::data::source::sqlite::database::models::HostsRow;
 use crate::server::service::tools;
 
 // #[derive(Debug)]

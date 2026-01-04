@@ -5,8 +5,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::server::config::defaults;
-use crate::server::database::error::{DeleteLocalGroupError, FileAddError, SaveLocalGroupError};
-use crate::server::database::models::{FilesLocalFragmentInsert, HostsRow};
+use crate::server::data::source::sqlite::database::error::{
+    DeleteLocalGroupError, FileAddError, SaveLocalGroupError,
+};
+use crate::server::data::source::sqlite::database::models::{FilesLocalFragmentInsert, HostsRow};
 use crate::server::service::tools;
 
 use anyhow::Context;

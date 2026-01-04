@@ -1,6 +1,6 @@
 use dsync_proto::model::server::HostInfo;
 
-use crate::server::{database::models::HostsRow, service::tools};
+use crate::server::{data::source::sqlite::database::models::HostsRow, service::tools};
 
 impl HostsRow {
     pub fn from_host_info(

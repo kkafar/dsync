@@ -7,9 +7,11 @@ use diesel::{
 use dsync_proto::model::server::{GroupInfo, HostInfo};
 use std::ops::DerefMut;
 
-use crate::server::{
-    data::source::DataSource,
-    database::{
+pub(crate) mod database;
+
+use crate::server::data::source::{
+    DataSource,
+    sqlite::database::{
         error::{
             DeleteLocalGroupError, FileAddError, LocalServerBaseInfoError, SaveLocalGroupError,
         },

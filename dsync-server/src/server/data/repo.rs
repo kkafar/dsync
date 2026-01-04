@@ -1,10 +1,12 @@
 use dsync_proto::model::server::{GroupInfo, HostInfo};
 
 use crate::server::data::source::DataSource;
-use crate::server::database::error::{
+use crate::server::data::source::sqlite::database::error::{
     DeleteLocalGroupError, FileAddError, LocalServerBaseInfoError, SaveLocalGroupError,
 };
-use crate::server::database::models::{FilesLocalFragmentInsert, FilesLocalRow, HostsRow};
+use crate::server::data::source::sqlite::database::models::{
+    FilesLocalFragmentInsert, FilesLocalRow, HostsRow,
+};
 
 /// DataRepository defines the data access API used by services.
 /// It abstracts the underlying data source (e.g., SQLite) and exposes methods
