@@ -130,22 +130,22 @@ impl FileTransferService for FileTransferServiceImpl {
 
         log::debug!("AFTER host_data retrieval");
 
-        log::debug!("BEFORE connecting FTS at {:?}", &host_data.ipv4_addr);
+        let fts_uri = create_server_url(SocketAddrV4::new(
+            Ipv4Addr::from_str(host_data.ipv4_addr.as_str()).expect("Failed to convert to ipv4"),
+            defaults::SERVER_PORT,
+        ));
 
-        let connection = ChannelFactory::channel_with_timeout(
-            create_server_url(SocketAddrV4::new(
-                Ipv4Addr::from_str(host_data.ipv4_addr.as_str())
-                    .expect("Failed to convert to ipv4"),
-                defaults::SERVER_PORT,
-            )),
-            Duration::from_secs(5),
-        )
-        .await
-        .map_err(|err| tonic::Status::failed_precondition(format!("fts-connection-fail: {err}")))?;
+        log::debug!("BEFORE connecting FTS at {:?}", &fts_uri);
+
+        let connection = ChannelFactory::channel_with_timeout(fts_uri, Duration::from_secs(5))
+            .await
+            .map_err(|err| {
+                tonic::Status::failed_precondition(format!("fts-connection-fail: {err}"))
+            })?;
 
         let mut fts_client = FileTransferServiceClient::new(connection);
 
-        log::debug!("AFTER connecting FTS at {:?}", &host_data.ipv4_addr);
+        log::debug!("AFTER connecting FTS");
 
         let transfer_init_request = TransferInitRequest {
             file_path_src: request_inner.file_path_src,

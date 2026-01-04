@@ -255,18 +255,29 @@ impl UserAgentService for UserAgentServiceImpl {
             host_dst_uuid: host_dst_info.uuid,
         };
 
-        let Ok(mut transfer_client) = FileTransferServiceClient::connect(
-            tools::net::ipv4_into_connection_addr(&host_src_info.ipv4_addr, defaults::SERVER_PORT),
+        log::debug!("Prepared TransferSubmitRequest: {:?}", &transfer_request);
+
+        let host_dst_ipv4_addr = Ipv4Addr::from_str(&host_src_info.ipv4_addr).map_err(|err| {
+            Status::failed_precondition(format!(
+                "failed-to-parse-dst-address: {}",
+                &host_src_info.ipv4_addr
+            ))
+        })?;
+        let host_dst_addr = SocketAddrV4::new(host_dst_ipv4_addr, defaults::SERVER_PORT);
+
+        log::debug!("Connecting to {}", &host_dst_addr);
+
+        let channel = ChannelFactory::channel_with_timeout(
+            create_server_url(host_dst_addr),
+            Duration::from_secs(5),
         )
-        .await
-        else {
-            return Err(tonic::Status::unavailable("remote-server-unavailable"));
-        };
+        .await?;
+        let mut transfer_client = FileTransferServiceClient::new(channel);
 
         let _transfer_response = match transfer_client.transfer_submit(transfer_request).await {
             Ok(response) => response.into_inner(),
             Err(status) => {
-                log::trace!("Dest host rejected TransferInitRequest");
+                log::warn!("Dest host rejected TransferInitRequest: {}", status);
                 // TODO: Handle this correctly, instead of forwarding the status
                 return Err(status);
             }
