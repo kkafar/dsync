@@ -92,7 +92,6 @@ impl FileTransferService for FileTransferServiceImpl {
         // Step 2
         // Extract necessary file information
 
-        log::debug!("BEFORE hitting fs for metadata");
         let Ok(file_metadata) = file_path_src.metadata() else {
             return Err(tonic::Status::internal("src-path-failed-metadata-fetch"));
         };
@@ -101,15 +100,11 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::internal("file-size-conversion-fail"));
         };
 
-        log::debug!("BEFORE hash compute");
-
         let Ok(file_sha1) =
             tools::file::compute_sha1_hash_from_file_async(&file_path_src, None).await
         else {
             return Err(tonic::Status::internal("file-sh1-comput-fail"));
         };
-
-        log::debug!("AFTER hash compute");
 
         log::debug!(
             "File info - size: {} bytes, sha1: {}",
@@ -128,14 +123,10 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::internal("host-dst-addr-missing"));
         };
 
-        log::debug!("AFTER host_data retrieval");
-
         let fts_uri = create_server_url(SocketAddrV4::new(
             Ipv4Addr::from_str(host_data.ipv4_addr.as_str()).expect("Failed to convert to ipv4"),
             defaults::SERVER_PORT,
         ));
-
-        log::debug!("BEFORE connecting FTS at {:?}", &fts_uri);
 
         let connection = ChannelFactory::channel_with_timeout(fts_uri, Duration::from_secs(5))
             .await
@@ -144,8 +135,6 @@ impl FileTransferService for FileTransferServiceImpl {
             })?;
 
         let mut fts_client = FileTransferServiceClient::new(connection);
-
-        log::debug!("AFTER connecting FTS");
 
         let transfer_init_request = TransferInitRequest {
             file_path_src: request_inner.file_path_src,
@@ -159,8 +148,6 @@ impl FileTransferService for FileTransferServiceImpl {
             .transfer_init(transfer_init_request.clone())
             .await;
 
-        log::debug!("AFTER running transfer_init");
-
         let transfer_init_response = match result {
             Ok(response) => response.into_inner(),
             Err(status) => {
@@ -168,8 +155,6 @@ impl FileTransferService for FileTransferServiceImpl {
                 return Err(tonic::Status::failed_precondition("fts-rejected"));
             }
         };
-
-        log::debug!("BEFORE SCHEDULING TRANSFER");
 
         // Step 4
         // Schedule data transfer

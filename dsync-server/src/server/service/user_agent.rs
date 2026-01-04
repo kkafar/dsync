@@ -255,8 +255,6 @@ impl UserAgentService for UserAgentServiceImpl {
             host_dst_uuid: host_dst_info.uuid,
         };
 
-        log::debug!("Prepared TransferSubmitRequest: {:?}", &transfer_request);
-
         let host_dst_ipv4_addr = Ipv4Addr::from_str(&host_src_info.ipv4_addr).map_err(|err| {
             Status::failed_precondition(format!(
                 "failed-to-parse-dst-address: {}",
@@ -264,8 +262,6 @@ impl UserAgentService for UserAgentServiceImpl {
             ))
         })?;
         let host_dst_addr = SocketAddrV4::new(host_dst_ipv4_addr, defaults::SERVER_PORT);
-
-        log::debug!("Connecting to {}", &host_dst_addr);
 
         let channel = ChannelFactory::channel_with_timeout(
             create_server_url(host_dst_addr),
@@ -583,8 +579,6 @@ impl UserAgentServiceImpl {
                 "Failed to find hosts in local network",
             ));
         };
-
-        log::debug!("Resolved addrs: {:?}", &ipv4_addrs);
 
         let mut serial_responses: Vec<HostInfo> = Vec::new();
 
