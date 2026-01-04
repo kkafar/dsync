@@ -116,7 +116,7 @@ impl FileTransferService for FileTransferServiceImpl {
         // Send init message to destination host
         let Ok(host_data) = self
             .server_ctx
-            .db_proxy
+            .repo
             .fetch_host_by_uuid(&request_inner.host_dst_uuid)
             .await
         else {

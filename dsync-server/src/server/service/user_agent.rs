@@ -117,7 +117,7 @@ impl UserAgentService for UserAgentServiceImpl {
         // 3 - save file to the db
         let result = self
             .ctx
-            .db_proxy
+            .repo
             .save_local_files(&fragments.collect::<Vec<FilesLocalFragmentInsert>>())
             .await;
 
@@ -147,12 +147,7 @@ impl UserAgentService for UserAgentServiceImpl {
             ));
         }
 
-        match self
-            .ctx
-            .db_proxy
-            .delete_local_file(&payload.file_path)
-            .await
-        {
+        match self.ctx.repo.delete_local_file(&payload.file_path).await {
             Ok(_) => Ok(Response::new(FileRemoveResponse {})),
             Err(err) => {
                 let message = format!("Error while attampting to remove a file: {err}");
@@ -171,7 +166,7 @@ impl UserAgentService for UserAgentServiceImpl {
         log::info!("Received FileList");
         log::debug!("Payload: {request_payload:?}");
 
-        match self.ctx.db_proxy.fetch_local_files().await {
+        match self.ctx.repo.fetch_local_files().await {
             Ok(local_files) => Ok(tonic::Response::new(FileListResponse {
                 file_list: local_files
                     .into_iter()
@@ -240,7 +235,7 @@ impl UserAgentService for UserAgentServiceImpl {
             host_dst_info.clone()
         } else {
             self.ctx
-                .db_proxy
+                .repo
                 .fetch_local_server_info()
                 .await
                 .map_err(|err| {
@@ -288,7 +283,7 @@ impl UserAgentService for UserAgentServiceImpl {
     ) -> Result<Response<HostListResponse>, Status> {
         log::info!("Received ListHostsRequest");
 
-        let servers_info = match self.ctx.db_proxy.fetch_hosts().await {
+        let servers_info = match self.ctx.repo.fetch_hosts().await {
             Ok(data) => data,
             Err(err) => {
                 log::error!("Error while fetching peer server info: {err}");
@@ -361,7 +356,7 @@ impl UserAgentService for UserAgentServiceImpl {
             .await?,
         );
 
-        let localhost_info = self.ctx.db_proxy.fetch_local_server_info().await?;
+        let localhost_info = self.ctx.repo.fetch_local_server_info().await?;
 
         let result = client
             .hello_there(HelloThereRequest {
@@ -396,7 +391,7 @@ impl UserAgentService for UserAgentServiceImpl {
             discovery_time: tools::time::get_current_timestamp(),
         };
 
-        self.ctx.db_proxy.insert_hosts(&[host_row]).await;
+        let _ = self.ctx.repo.insert_hosts(&[host_row]).await;
         Ok(Response::new(HostAddResponse {
             host_info: Some(host_info),
         }))
@@ -426,10 +421,7 @@ impl UserAgentService for UserAgentServiceImpl {
             ));
         }
 
-        self.ctx
-            .db_proxy
-            .delete_host_with_uuid(&host_info.uuid)
-            .await;
+        let _ = self.ctx.repo.delete_host_with_uuid(&host_info.uuid).await;
 
         Ok(Response::new(HostRemoveResponse {}))
     }
@@ -441,7 +433,7 @@ impl UserAgentService for UserAgentServiceImpl {
         log::info!("Received GroupCreateRequest");
 
         let payload = request.into_inner();
-        match self.ctx.db_proxy.save_local_group(&payload.group_id).await {
+        match self.ctx.repo.save_local_group(&payload.group_id).await {
             Ok(_) => Ok(tonic::Response::new(GroupCreateResponse {})),
             Err(err) => {
                 log::warn!("Failed to save local group with error: {err}");
@@ -465,12 +457,7 @@ impl UserAgentService for UserAgentServiceImpl {
     ) -> Result<Response<GroupDeleteResponse>, Status> {
         let payload = request.into_inner();
 
-        match self
-            .ctx
-            .db_proxy
-            .delete_group_by_name(&payload.group_id)
-            .await
-        {
+        match self.ctx.repo.delete_group_by_name(&payload.group_id).await {
             Ok(_) => Ok(tonic::Response::new(GroupDeleteResponse {})),
             Err(error) => match error {
                 DeleteLocalGroupError::DoesNotExist => Err(tonic::Status::invalid_argument(
@@ -487,7 +474,7 @@ impl UserAgentService for UserAgentServiceImpl {
         &self,
         _request: Request<GroupListRequest>,
     ) -> Result<Response<GroupListResponse>, Status> {
-        let group_list = match self.ctx.db_proxy.fetch_local_groups().await {
+        let group_list = match self.ctx.repo.fetch_local_groups().await {
             Ok(groups) => groups,
             Err(err) => return Err(tonic::Status::internal(format!("Failed with error: {err}"))),
         };
@@ -539,7 +526,7 @@ impl UserAgentServiceImpl {
 
         let mut client_conn = HostDiscoveryServiceClient::new(channel);
 
-        let server_info = self.ctx.db_proxy.fetch_local_server_info().await.ok()?;
+        let server_info = self.ctx.repo.fetch_local_server_info().await.ok()?;
 
         let request = tonic::Request::new(HelloThereRequest {
             host_info: Some(HostInfo {
@@ -601,7 +588,7 @@ impl UserAgentServiceImpl {
             .map(|info| HostsRow::from_host_info(&info, true, Some(discovery_time)))
             .collect();
 
-        self.ctx.db_proxy.insert_hosts(&peer_base_info).await;
+        let _ = self.ctx.repo.insert_hosts(&peer_base_info).await;
 
         Ok(serial_responses)
     }
@@ -609,15 +596,15 @@ impl UserAgentServiceImpl {
     async fn resolve_host_info_by_spec(&self, host_spec: &HostSpec) -> anyhow::Result<HostsRow> {
         match host_spec.kind.as_ref().expect("Required field") {
             host_spec::Kind::LocalHost(_) => {
-                let local_host_info = self.ctx.db_proxy.fetch_local_server_info().await?;
+                let local_host_info = self.ctx.repo.fetch_local_server_info().await?;
                 Ok(local_host_info)
             }
             host_spec::Kind::Name(name) => {
-                let host_info = self.ctx.db_proxy.fetch_host_by_name(name).await?;
+                let host_info = self.ctx.repo.fetch_host_by_name(name).await?;
                 Ok(host_info)
             }
             host_spec::Kind::LocalId(id) => {
-                let host_info = self.ctx.db_proxy.fetch_host_by_local_id(*id).await?;
+                let host_info = self.ctx.repo.fetch_host_by_local_id(*id).await?;
                 Ok(host_info)
             }
         }

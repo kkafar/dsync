@@ -6,7 +6,8 @@ use std::{
 
 use config::Config;
 use context::ServerContext;
-use database::DatabaseProxy;
+use data::repo::{DataRepository, MainRepository};
+use data::source::SqliteLocalMainDataSource;
 use diesel::{Connection, SqliteConnection};
 use dsync_proto::services::{
     file_transfer::file_transfer_service_server::FileTransferServiceServer,
@@ -21,6 +22,7 @@ use database::models::HostsRow;
 
 pub mod config;
 pub mod context;
+pub mod data;
 pub mod database;
 pub(crate) mod service;
 
@@ -39,17 +41,13 @@ impl Server {
         let connection = SqliteConnection::establish(self.cfg.database_url.to_str().unwrap())
             .expect("Failed to open db connection");
 
-        let db_proxy = DatabaseProxy::new(connection);
-        db_proxy
-            .ensure_db_record_exists(|| self.create_this_server_info())
-            .await;
+        let sqlite_ds =
+            SqliteLocalMainDataSource::new(connection, || self.create_this_server_info()).await?;
+        let repo_arc: Arc<dyn DataRepository> = Arc::new(MainRepository::new(Box::new(sqlite_ds)));
 
         let server_addr = self.get_server_addr();
 
-        let srv_ctx = Arc::new(ServerContext {
-            cfg: self.cfg,
-            db_proxy: Arc::new(db_proxy),
-        });
+        let srv_ctx = Arc::new(ServerContext::new(self.cfg, repo_arc));
 
         let user_agent_service_instance =
             service::user_agent::UserAgentServiceImpl::new(srv_ctx.clone());

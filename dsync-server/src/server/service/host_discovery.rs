@@ -19,7 +19,7 @@ impl HostDiscoveryServiceImpl {
     }
 
     async fn retrieve_local_server_info(&self) -> anyhow::Result<HostsRow> {
-        anyhow::Ok(self.ctx.db_proxy.fetch_local_server_info().await?)
+        anyhow::Ok(self.ctx.repo.fetch_local_server_info().await?)
     }
 }
 
@@ -63,7 +63,7 @@ impl HostDiscoveryService for HostDiscoveryServiceImpl {
         };
 
         // FIXME: We need to handle the result of the insert operation
-        self.ctx.db_proxy.insert_hosts(&[host_row]).await;
+        let _ = self.ctx.repo.insert_hosts(&[host_row]).await;
 
         Ok(Response::new(GeneralKenobiResponse {
             host_info: Some(HostInfo {
