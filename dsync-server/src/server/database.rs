@@ -17,6 +17,7 @@ use crate::server::database::{
     },
 };
 
+pub(crate) mod conversion;
 pub(crate) mod error;
 pub(crate) mod models;
 mod schema;
