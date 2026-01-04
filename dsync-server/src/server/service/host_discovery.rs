@@ -6,6 +6,7 @@ use tonic::{Request, Response, Status};
 
 use crate::server::context::ServerContext;
 use crate::server::database::models::HostsRow;
+use crate::server::service::tools;
 
 // #[derive(Debug)]
 pub struct HostDiscoveryServiceImpl {
@@ -30,6 +31,10 @@ impl HostDiscoveryService for HostDiscoveryServiceImpl {
     ) -> Result<Response<GeneralKenobiResponse>, Status> {
         log::info!(target: "pslog", "Received hello_there rpc");
 
+        let peer_addr = request.remote_addr().ok_or_else(|| {
+            Status::invalid_argument("Can not determine address of connecting peer")
+        })?;
+
         let Some(peer_info) = request.into_inner().host_info else {
             log::trace!(target: "pslog", "Rejecting request due to missing peer info");
             return Err(tonic::Status::invalid_argument("Missing peer info"));
@@ -46,6 +51,18 @@ impl HostDiscoveryService for HostDiscoveryServiceImpl {
                 )));
             }
         };
+
+        let host_row = HostsRow {
+            uuid: peer_info.uuid,
+            name: peer_info.name,
+            hostname: peer_info.hostname,
+            is_remote: true,
+            ipv4_addr: peer_addr.ip().to_string(),
+            discovery_time: tools::time::get_current_timestamp(),
+        };
+
+        // FIXME: We need to handle the result of the insert operation
+        self.ctx.db_proxy.insert_hosts(&[host_row]).await;
 
         Ok(Response::new(GeneralKenobiResponse {
             host_info: Some(HostInfo {

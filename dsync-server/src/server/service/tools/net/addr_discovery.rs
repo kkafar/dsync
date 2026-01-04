@@ -131,12 +131,10 @@ impl CandidateAddressProviderFactory {
 
     pub fn make_provider(&self) -> Option<Box<dyn CandidateAddressProvider>> {
         if let Some(arp_provider) = self.make_arp_provider() {
-            log::debug!("ARP PROVIDER");
             return Some(arp_provider);
         }
 
         if let Some(ip_neigh_provider) = self.make_ip_neigh_provider() {
-            log::debug!("IP NEIGH PROVIDER");
             return Some(ip_neigh_provider);
         }
 
@@ -144,9 +142,7 @@ impl CandidateAddressProviderFactory {
     }
 
     fn make_arp_provider(&self) -> Option<Box<dyn CandidateAddressProvider>> {
-        log::debug!("MAKE ARP BEFORE CHECK");
         if !super::super::file::check_binary_exists("arp") {
-            log::debug!("MAKE ARP AFTER CHECK");
             return None;
         }
 
