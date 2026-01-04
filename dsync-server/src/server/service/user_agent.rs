@@ -257,7 +257,7 @@ impl UserAgentService for UserAgentServiceImpl {
 
         let host_dst_ipv4_addr = Ipv4Addr::from_str(&host_src_info.ipv4_addr).map_err(|err| {
             Status::failed_precondition(format!(
-                "failed-to-parse-dst-address: {}",
+                "failed-to-parse-dst-address: {} with error: {err}",
                 &host_src_info.ipv4_addr
             ))
         })?;
@@ -595,22 +595,13 @@ impl UserAgentServiceImpl {
         let discovery_time = tools::time::get_current_timestamp();
 
         // Cache discovered hosts locally
-        {
-            let peer_base_info: Vec<HostsRow> = serial_responses
-                .iter()
-                .map(|info| HostsRow {
-                    // TODO: Could use only references in this struct, avoiding all the copies
-                    uuid: info.uuid.clone(),
-                    name: info.name.clone(),
-                    hostname: info.hostname.clone(),
-                    is_remote: true,
-                    ipv4_addr: info.address.clone(),
-                    discovery_time,
-                })
-                .collect();
+        let peer_base_info: Vec<HostsRow> = serial_responses
+            .iter()
+            // TODO: Could use only references in this struct, avoiding all the copies
+            .map(|info| HostsRow::from_host_info(&info, true, Some(discovery_time)))
+            .collect();
 
-            self.ctx.db_proxy.insert_hosts(&peer_base_info).await;
-        }
+        self.ctx.db_proxy.insert_hosts(&peer_base_info).await;
 
         Ok(serial_responses)
     }

@@ -52,6 +52,7 @@ impl HostDiscoveryService for HostDiscoveryServiceImpl {
             }
         };
 
+        // Can not use HostsRow::from_host_info due to ipv4_addr field not coming from the peer_info
         let host_row = HostsRow {
             uuid: peer_info.uuid,
             name: peer_info.name,
