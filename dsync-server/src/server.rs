@@ -4,6 +4,7 @@ use std::{
     sync::Arc,
 };
 
+use anyhow::Context;
 use config::Config;
 use context::ServerContext;
 use data::repo::{DataRepository, MainDataRepository};
@@ -38,7 +39,7 @@ impl Server {
         log::info!("Starting the server instance");
 
         let connection = SqliteConnection::establish(self.cfg.database_url.to_str().unwrap())
-            .expect("Failed to open db connection");
+            .context("Failed to open db connection")?;
 
         let sqlite_ds =
             SqliteDataSource::new(connection, || self.create_this_server_info()).await?;
