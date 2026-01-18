@@ -19,7 +19,7 @@ use dsync_proto::services::file_transfer::{
     file_transfer_service_client::FileTransferServiceClient,
     file_transfer_service_server::FileTransferService,
 };
-use dsync_shared::conn::{ChannelFactory, create_server_url};
+use dsync_shared::conn::{ChannelFactory, create_server_uri};
 use tokio::{
     fs::{File, OpenOptions, metadata},
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt, BufWriter},
@@ -123,7 +123,7 @@ impl FileTransferService for FileTransferServiceImpl {
             return Err(tonic::Status::internal("host-dst-addr-missing"));
         };
 
-        let fts_uri = create_server_url(SocketAddrV4::new(
+        let fts_uri = create_server_uri(SocketAddrV4::new(
             Ipv4Addr::from_str(host_data.ipv4_addr.as_str()).expect("Failed to convert to ipv4"),
             defaults::SERVER_PORT,
         ));

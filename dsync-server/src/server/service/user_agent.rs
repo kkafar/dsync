@@ -33,7 +33,7 @@ use dsync_proto::services::{
     },
 };
 use dsync_shared::DEFAULT_SERVER_PORT;
-use dsync_shared::conn::{ChannelFactory, create_server_url};
+use dsync_shared::conn::{ChannelFactory, create_server_uri};
 use dsync_shared::model::FileSourceWrapper;
 use tonic::transport::Uri;
 use tonic::{Request, Response, Status};
@@ -261,7 +261,7 @@ impl UserAgentService for UserAgentServiceImpl {
         let host_dst_addr = SocketAddrV4::new(host_dst_ipv4_addr, defaults::SERVER_PORT);
 
         let channel = ChannelFactory::channel_with_timeout(
-            create_server_url(host_dst_addr),
+            create_server_uri(host_dst_addr),
             Duration::from_secs(5),
         )
         .await?;
@@ -352,7 +352,7 @@ impl UserAgentService for UserAgentServiceImpl {
 
         let mut client = HostDiscoveryServiceClient::new(
             ChannelFactory::channel_with_timeout(
-                create_server_url(host_addr),
+                create_server_uri(host_addr),
                 Duration::from_secs(5),
             )
             .await?,

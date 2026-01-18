@@ -11,12 +11,12 @@ use tonic::transport::Channel;
 
 use crate::DEFAULT_SERVER_PORT;
 
-pub fn local_server_url(port: Option<u16>) -> tonic::transport::Uri {
+pub fn local_server_uri(port: Option<u16>) -> tonic::transport::Uri {
     let authority = SocketAddrV4::new(Ipv4Addr::LOCALHOST, port.unwrap_or(DEFAULT_SERVER_PORT));
-    create_server_url(authority)
+    create_server_uri(authority)
 }
 
-pub fn create_server_url(socket: SocketAddrV4) -> tonic::transport::Uri {
+pub fn create_server_uri(socket: SocketAddrV4) -> tonic::transport::Uri {
     tonic::transport::Uri::builder()
         .scheme("http")
         .authority(socket.to_string())
@@ -83,7 +83,7 @@ impl ServiceConnFactory {
         port: Option<u16>,
     ) -> Result<UserAgentServiceClient<Channel>, tonic::Status> {
         let port = port.unwrap_or(DEFAULT_SERVER_PORT);
-        let channel = ChannelFactory::channel(local_server_url(Some(port))).await?;
+        let channel = ChannelFactory::channel(local_server_uri(Some(port))).await?;
         Ok(UserAgentServiceClient::new(channel))
     }
 
@@ -91,7 +91,7 @@ impl ServiceConnFactory {
         port: Option<u16>,
     ) -> Result<ServerControlServiceClient<Channel>, tonic::Status> {
         let port = port.unwrap_or(DEFAULT_SERVER_PORT);
-        let channel = ChannelFactory::channel(local_server_url(Some(port))).await?;
+        let channel = ChannelFactory::channel(local_server_uri(Some(port))).await?;
         Ok(ServerControlServiceClient::new(channel))
     }
 }
