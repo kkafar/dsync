@@ -13,7 +13,6 @@ impl SqliteDataSource {
             .run_pending_migrations(MIGRATIONS)
             .map_err(|err| anyhow::anyhow!("Failed to run migrations with err: {}", err))?;
 
-        log::info!("Database initialized");
         Ok(())
     }
 }
