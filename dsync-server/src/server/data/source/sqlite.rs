@@ -36,9 +36,11 @@ impl SqliteDataSource {
         conn: SqliteConnection,
         server_info_factory: impl FnOnce() -> HostsRow,
     ) -> anyhow::Result<Self> {
-        let ds = Self {
+        let mut ds = Self {
             conn: tokio::sync::Mutex::new(conn),
         };
+
+        ds.init_if_needed().await?;
 
         match ds.fetch_local_server_info().await {
             Ok(_) => {}

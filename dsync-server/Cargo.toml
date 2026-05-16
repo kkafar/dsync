@@ -28,3 +28,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 async-trait = "0.1.89"
 xdg = "3.0.0"
+diesel_migrations = { version = "2.3.2", features = ["sqlite"] }
