@@ -4,6 +4,7 @@ use dsync_server::server::config::{Config, keys::ENV_FILE};
 
 use crate::config::provider::PartialConfigProvider;
 
+pub mod error;
 pub mod provider;
 
 #[derive(Debug, Clone, Default)]
