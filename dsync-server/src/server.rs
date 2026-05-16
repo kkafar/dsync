@@ -9,7 +9,7 @@ use config::Config;
 use context::ServerContext;
 use data::repo::{DataRepository, MainDataRepository};
 use data::source::SqliteDataSource;
-use diesel::{Connection, SqliteConnection};
+use diesel::{Connection, SqliteConnection, sqlite::Sqlite};
 use dsync_proto::services::{
     file_transfer::file_transfer_service_server::FileTransferServiceServer,
     host_discovery::host_discovery_service_server::HostDiscoveryServiceServer,
@@ -54,7 +54,11 @@ impl Server {
             service::server_control::ServerControlServiceImpl::new(server_ctx.clone(), signal_tx);
 
         let server_addr = self.get_server_addr();
-        log::info!("Starting server at {:?}", &server_addr);
+        log::info!(
+            "Starting server at {:?}, with config: {:?}",
+            &server_addr,
+            &self.config
+        );
 
         tonic::transport::Server::builder()
             .add_service(UserAgentServiceServer::new(user_agent_service_instance))
@@ -105,13 +109,15 @@ impl Server {
     }
 
     fn create_database_connection(config: &Config) -> Result<SqliteConnection, anyhow::Error> {
+        log::trace!("Creating database connection");
         let connection = SqliteConnection::establish(config.database_url.to_str().unwrap())
             .context("Failed to create db connection")?;
 
-        return Ok(connection);
+        Ok(connection)
     }
 
     async fn create_data_repository(&self) -> Result<Arc<dyn DataRepository>, anyhow::Error> {
+        log::trace!("Creating data repository");
         let db_connection = Self::create_database_connection(&self.config)?;
 
         let sqlite_ds =
