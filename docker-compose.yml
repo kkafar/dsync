@@ -3,6 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: server-build
+      target: dsync-release
     ports:
       - "50051:50051"
