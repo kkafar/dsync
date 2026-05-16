@@ -15,7 +15,7 @@ pub mod keys {
 }
 
 /// Running configuration for the server.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Port the server should listen on.
     pub port: u16,
