@@ -27,41 +27,33 @@ pub(crate) mod data;
 pub(crate) mod service;
 
 pub struct Server {
-    cfg: Config,
+    config: Config,
 }
 
 impl Server {
-    pub fn new(cfg: Config) -> Self {
-        Self { cfg }
+    pub fn new(config: Config) -> Self {
+        Self { config }
     }
 
     pub async fn run(self) -> anyhow::Result<()> {
         log::info!("Starting the server instance");
 
-        let connection = SqliteConnection::establish(self.cfg.database_url.to_str().unwrap())
-            .context("Failed to open db connection")?;
-
-        let sqlite_ds =
-            SqliteDataSource::new(connection, || self.create_this_server_info()).await?;
-        let repo_arc: Arc<dyn DataRepository> =
-            Arc::new(MainDataRepository::new(Box::new(sqlite_ds)));
-
-        let server_addr = self.get_server_addr();
-
-        let srv_ctx = Arc::new(ServerContext::new(self.cfg, repo_arc));
+        let repo_arc = self.create_data_repository().await?;
+        let server_ctx = Arc::new(ServerContext::new(self.config.clone(), repo_arc));
 
         let user_agent_service_instance =
-            service::user_agent::UserAgentServiceImpl::new(srv_ctx.clone());
+            service::user_agent::UserAgentServiceImpl::new(server_ctx.clone());
         let peer_service_instance =
-            service::host_discovery::HostDiscoveryServiceImpl::new(srv_ctx.clone());
+            service::host_discovery::HostDiscoveryServiceImpl::new(server_ctx.clone());
         let file_transfer_service =
-            service::file_transfer::FileTransferServiceImpl::new(srv_ctx.clone());
+            service::file_transfer::FileTransferServiceImpl::new(server_ctx.clone());
 
         let (signal_tx, signal_rx) = tokio::sync::oneshot::channel::<()>();
 
         let server_control_service =
-            service::server_control::ServerControlServiceImpl::new(srv_ctx.clone(), signal_tx);
+            service::server_control::ServerControlServiceImpl::new(server_ctx.clone(), signal_tx);
 
+        let server_addr = self.get_server_addr();
         log::info!("Starting server at {:?}", &server_addr);
 
         tonic::transport::Server::builder()
@@ -100,7 +92,7 @@ impl Server {
     }
 
     fn get_server_addr(&self) -> SocketAddrV4 {
-        SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.cfg.port)
+        SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, self.config.port)
     }
 
     async fn shutdown_feature(signal_rx: oneshot::Receiver<()>) -> () {
@@ -110,5 +102,24 @@ impl Server {
             );
         }
         log::info!("Requesting runtime shutdown");
+    }
+
+    fn create_database_connection(config: &Config) -> Result<SqliteConnection, anyhow::Error> {
+        let connection = SqliteConnection::establish(config.database_url.to_str().unwrap())
+            .context("Failed to create db connection")?;
+
+        return Ok(connection);
+    }
+
+    async fn create_data_repository(&self) -> Result<Arc<dyn DataRepository>, anyhow::Error> {
+        let db_connection = Self::create_database_connection(&self.config)?;
+
+        let sqlite_ds =
+            SqliteDataSource::new(db_connection, || self.create_this_server_info()).await?;
+
+        let repo_arc: Arc<dyn DataRepository> =
+            Arc::new(MainDataRepository::new(Box::new(sqlite_ds)));
+
+        Ok(repo_arc)
     }
 }
