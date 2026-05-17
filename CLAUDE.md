@@ -18,19 +18,13 @@ cargo build --bin dsync-server               # server only (matches CI)
 cargo build --bin dsync-cli                  # CLI only (matches CI)
 
 # Run the server in dev (loads dsync-server/.env -> DATABASE_URL=./main.db, SERVER_PORT=50051)
-cd dsync-server && cargo run --bin dsync-server -- --log-level trace
+cargo run --package dsync-server -- --log-level trace --env-file ./config/.test-env
 
 # Run the CLI against the local server
 cargo run --bin dsync-cli -- host list
 cargo run --bin dsync-cli -- file copy /abs/path remote-name@/abs/dst/path
 cargo run --bin dsync-cli -- server shutdown
 ```
-
-There is no test suite of substance (`dsync-cli/tests/playground.rs` is a stub); CI only verifies that both binaries compile.
-
-### Docker
-
-`Dockerfile` builds with `--target dsync-release`; `docker-compose.yml` exposes port 50051 and uses `config/.test.env` (`DATABASE_URL=./main.db`, `SERVER_PORT=50051`). Note the CMD writes `./main.db` into the container's working directory.
 
 ### Database / migrations
 
@@ -62,13 +56,12 @@ The daemon (`dsync-server/src/server.rs`) wires four tonic services onto a singl
 
 **Local-server identity** is bootstrapped in `SqliteDataSource::new`: if no `is_remote = false` row exists in `hosts`, one is inserted using the closure passed in (which calls `hostname` and generates a UUID). Per-server UUIDs are stable for the life of a database; deleting `main.db` re-identifies the host to its peers.
 
-**Cross-daemon RPC** is built ad hoc by services via `ChannelFactory::channel_with_timeout` + `create_server_uri(SocketAddrV4)`. Host discovery currently *hardcodes* `defaults::SERVER_PORT` (50051) for the remote — running a peer on a non-default port breaks discovery. There is a `--port` CLI flag but its help text already warns against using it for this reason.
+**Cross-daemon RPC** is built ad hoc by services via `ChannelFactory::channel_with_timeout` + `create_server_uri(SocketAddrV4)`.
 
 **Config loading** (`bin/dsync-server/config.rs`) uses a `PartialConfigProvider` chain: CLI args → env (via `dotenvy`) → XDG state dir (`xdg::BaseDirectories::with_prefix("dsync")` → `…/state/dsync/main.db`). Providers earlier in the list win on merge. To make a config field optional-then-required, add it to `PartialConfig`, implement `.merge`, and validate in `TryInto<Config>`.
 
 ## Conventions
 
-- **Logging**: `log` + `log4rs`. Some sites use `target: "pslog"` for peer-discovery-related events — preserve that target when adding nearby log lines.
+- **Logging**: `log` + `log4rs`.
 - **gRPC errors**: services use short kebab-case status messages (`"src-path-not-absolute"`, `"fts-rejected"`, `"missing-host-spec"`). Match the style when adding new error returns.
 - **Path semantics**: every file path crossing the gRPC boundary is expected to be **absolute**. The CLI helper `PathSpecWrapper::try_into_abs_path` converts relative → absolute before sending; services re-check (`PathBuf::is_absolute`) and reject otherwise.
-- **The repository abstraction is *intentionally* thin** — it does not paper over diesel error types. Service code matches on `FileAddError`, `SaveLocalGroupError`, etc., directly, and the data source must return those domain-specific errors rather than collapsing everything into `anyhow`.
