@@ -1,4 +1,14 @@
-FROM rust:1.91-alpine AS builder
+ARG PKG_SQLITE_VERSION=3.51.2-r0
+ARG PKG_PROTOC_VERSION=31.1-r1
+
+FROM rust:1.95-alpine3.23 AS builder
+ARG PKG_SQLITE_VERSION
+ARG PKG_PROTOC_VERSION
+RUN apk add --no-cache \
+  protoc="${PKG_PROTOC_VERSION}" \
+  sqlite-dev="${PKG_SQLITE_VERSION}" \
+  sqlite="${PKG_SQLITE_VERSION}" \
+  sqlite-static="${PKG_SQLITE_VERSION}"
 WORKDIR /dsync
 COPY dsync-cli/ ./dsync-cli/
 COPY dsync-proto/ ./dsync-proto/
@@ -7,21 +17,14 @@ COPY dsync-shared/ ./dsync-shared/
 COPY config/ ./config/
 COPY Cargo.lock Cargo.toml ./
 
-FROM builder AS proto-build
-RUN apk update && apk add protoc
-RUN cargo build --release -p dsync-proto
+FROM builder AS dsync-build-release
+RUN cargo build --release --workspace
 
-FROM proto-build AS server-build
-RUN apk update && apk add sqlite-dev sqlite sqlite-static
-RUN cargo build --release -p dsync-server
-RUN cargo install diesel_cli --no-default-features --features sqlite
-RUN cd ./dsync-server && diesel database setup --migration-dir ./migrations --config-file ./diesel.toml --database-url "/dsync/main.db" && cd ../
+FROM alpine:3.23.4 AS dsync-release
+ARG PKG_SQLITE_VERSION
+RUN apk add --no-cache sqlite="${PKG_SQLITE_VERSION}"
+COPY --from=dsync-build-release /dsync/target/release/dsync-server /usr/local/bin/
+COPY --from=dsync-build-release /dsync/target/release/dsync-cli /usr/local/bin/
+COPY --from=dsync-build-release /dsync/config /dsync/config
 EXPOSE 50051
-# CMD ["/bin/sh"]
-CMD ["cargo", "run", "--release", "-p", "dsync-server", "--", "--env-file", "./config/.test.env", "-l", "trace"]
-
-FROM proto-build AS cli-build
-RUN cargo build --release -p dsync-cli
-
-
-
+CMD ["dsync-server", "--env-file", "/dsync/config/.test.env", "--log-level", "trace"]
