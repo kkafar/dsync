@@ -15,4 +15,6 @@ service ServerControlService {
   // It only means that the server acknowledged the shutdown request,
   // and on best-effort basis will try to honour the request.
   rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+
+  rpc PrintConfig(PrintConfigRequest) returns (PrintConfigResponse);
 }

@@ -71,6 +71,9 @@ impl Commands {
             },
             Self::Server(subcmd) => match subcmd {
                 server::ServerCommand::Shutdown {} => command::server::server_shutdown(cfg).await,
+                server::ServerCommand::PrintConfig {} => {
+                    command::server::server_print_config(cfg).await
+                }
             },
         }
     }

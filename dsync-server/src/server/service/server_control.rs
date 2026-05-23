@@ -1,21 +1,22 @@
 use std::sync::{Arc, Mutex};
 
 use dsync_proto::services::server_control::{
-    ShutdownRequest, ShutdownResponse, server_control_service_server::ServerControlService,
+    PrintConfigResponse, ShutdownRequest, ShutdownResponse,
+    server_control_service_server::ServerControlService,
 };
 use tokio::sync::oneshot;
 
 use crate::server::context::ServerContext;
 
 pub struct ServerControlServiceImpl {
-    _ctx: Arc<ServerContext>,
+    ctx: Arc<ServerContext>,
     shutdown_sig: Mutex<Option<oneshot::Sender<()>>>,
 }
 
 impl ServerControlServiceImpl {
     pub fn new(ctx: Arc<ServerContext>, shutdown_sig: oneshot::Sender<()>) -> Self {
         Self {
-            _ctx: ctx,
+            ctx: ctx,
             shutdown_sig: Mutex::new(Some(shutdown_sig)),
         }
     }
@@ -52,5 +53,19 @@ impl ServerControlService for ServerControlServiceImpl {
         });
 
         response
+    }
+
+    async fn print_config(
+        &self,
+        _request: tonic::Request<dsync_proto::services::server_control::PrintConfigRequest>,
+    ) -> Result<tonic::Response<PrintConfigResponse>, tonic::Status> {
+        log::info!("Received print config request");
+
+        let config = &self.ctx.cfg;
+        let response = PrintConfigResponse {
+            config: format!("{:#?}", config),
+        };
+
+        Ok(tonic::Response::new(response))
     }
 }
