@@ -1,6 +1,6 @@
 use crate::config::Config;
 use anyhow::bail;
-use dsync_proto::services::server_control::ShutdownRequest;
+use dsync_proto::services::server_control::{PrintConfigRequest, ShutdownRequest};
 use dsync_shared::conn::ServiceConnFactory;
 
 pub(crate) async fn server_shutdown(cfg: &Config) -> Result<(), anyhow::Error> {
@@ -16,6 +16,29 @@ pub(crate) async fn server_shutdown(cfg: &Config) -> Result<(), anyhow::Error> {
     match response {
         Ok(_) => {
             log::info!("Server ACK");
+            Ok(())
+        }
+        Err(status) => {
+            log::error!("Received ERROR response from server\n{status:?}");
+            bail!("Received ERROR response from server: {status:?}")
+        }
+    }
+}
+
+pub(crate) async fn server_print_config(cfg: &Config) -> Result<(), anyhow::Error> {
+    let request = tonic::Request::new(PrintConfigRequest {});
+
+    let mut client =
+        ServiceConnFactory::local_server_control_service(Some(cfg.server_port)).await?;
+
+    log::trace!("Sending request to server");
+    log::debug!("{request:?}");
+
+    let response = client.print_config(request).await;
+    match response {
+        Ok(response) => {
+            let config = response.into_inner().config;
+            println!("{config}");
             Ok(())
         }
         Err(status) => {

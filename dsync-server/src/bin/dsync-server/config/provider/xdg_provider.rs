@@ -3,15 +3,15 @@ use std::path::PathBuf;
 use crate::config::{PartialConfig, error::ConfigLoadError, provider::PartialConfigProvider};
 
 /// This one provides only path for the database
-pub struct XdgPartialConfigProvider {}
+pub struct XdgConfigProvider {}
 
-impl XdgPartialConfigProvider {
+impl XdgConfigProvider {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl PartialConfigProvider for XdgPartialConfigProvider {
+impl PartialConfigProvider for XdgConfigProvider {
     fn load_partial_config(&self) -> Result<PartialConfig, ConfigLoadError> {
         let xdg_dirs = xdg::BaseDirectories::with_prefix("dsync");
 

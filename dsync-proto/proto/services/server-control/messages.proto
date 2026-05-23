@@ -4,3 +4,10 @@ package services.server_control;
 message ShutdownRequest {}
 
 message ShutdownResponse {}
+
+message PrintConfigRequest {}
+
+message PrintConfigResponse {
+    string config = 1;
+}
+
