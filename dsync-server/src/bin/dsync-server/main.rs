@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = load_config(&[
         &config::provider::CliArgsConfigProvider::new(args),
         &config::provider::EnvConfigProvider::new(),
-        &config::provider::XdgPartialConfigProvider::new(),
+        &config::provider::XdgConfigProvider::new(),
     ])
     .context("Failed to load configuration")?;
 
