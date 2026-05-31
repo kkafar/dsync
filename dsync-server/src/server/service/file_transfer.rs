@@ -40,7 +40,6 @@ use crate::server::{
     },
 };
 
-// #[derive(Debug)]
 pub struct FileTransferServiceImpl {
     server_ctx: Arc<ServerContext>,
     session_registry: tokio::sync::Mutex<FileTransferSessionRegistry>,

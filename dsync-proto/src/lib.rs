@@ -17,6 +17,10 @@ pub mod services {
     pub mod server_control {
         include!("../proto-generated/services.server_control.rs");
     }
+
+    pub mod progress {
+        include!("../proto-generated/services.progress.rs");
+    }
 }
 
 pub mod model {
