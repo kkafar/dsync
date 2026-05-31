@@ -1,7 +1,7 @@
 syntax = "proto3";
 package services.server_control;
 
-import "services/server-control/messages.proto";
+import "services/server_control/messages.proto";
 
 // Methods for controlling the server instance.
 service ServerControlService {

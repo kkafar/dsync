@@ -1,7 +1,7 @@
 syntax = "proto3";
 package services.user_agent;
 
-import "services/user-agent/messages.proto";
+import "services/user_agent/messages.proto";
 
 // Communication between UserAgent (e.g. CLI tool) and local
 // server instance.

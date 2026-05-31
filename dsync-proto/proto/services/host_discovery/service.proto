@@ -1,7 +1,7 @@
 syntax = "proto3";
 package services.host_discovery;
 
-import "services/host-discovery/messages.proto";
+import "services/host_discovery/messages.proto";
 
 service HostDiscoveryService {
   // Host discovery. Peer sends HelloThere message

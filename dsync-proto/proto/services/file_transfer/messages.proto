@@ -40,7 +40,9 @@ message TransferInitRequest {
   int32 chunk_size = 5;
 }
 
-message TransferInitResponse { int32 session_id = 1; }
+message TransferInitResponse {
+  int32 session_id = 1;
+}
 
 message TransferChunkRequest {
   int32 session_id = 1;

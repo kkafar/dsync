@@ -8,6 +8,5 @@ message ShutdownResponse {}
 message PrintConfigRequest {}
 
 message PrintConfigResponse {
-    string config = 1;
+  string config = 1;
 }
-

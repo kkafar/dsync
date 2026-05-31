@@ -1,7 +1,7 @@
 syntax = "proto3";
 package services.file_transfer;
 
-import "services/file-transfer/messages.proto";
+import "services/file_transfer/messages.proto";
 
 service FileTransferService {
   /**
@@ -22,6 +22,5 @@ service FileTransferService {
    * dropped before the file transfer completes the transfered data should be
    * dropped (rigtht now, TODO: improve this).
    */
-  rpc TransferChunk(stream TransferChunkRequest)
-      returns (TransferChunkResponse);
+  rpc TransferChunk(stream TransferChunkRequest) returns (TransferChunkResponse);
 }
