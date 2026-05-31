@@ -1,0 +1,10 @@
+syntax = "proto3";
+package services.progress;
+
+message AttachToProgressStreamRequest {
+  int32 session_id = 1;
+}
+
+message AttachToProgressStreamResponse {
+  int32 progress_percentage = 1;
+}
