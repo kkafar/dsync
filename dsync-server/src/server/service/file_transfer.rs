@@ -185,7 +185,7 @@ impl FileTransferService for FileTransferServiceImpl {
         };
 
         let session_id = {
-            let session_id_raw = session.session_id.0;
+            let session_id_raw = session.session_id.raw_id();
             let mut sr_guard = self.session_registry.lock().await;
             sr_guard.register(session);
             session_id_raw
@@ -310,7 +310,9 @@ impl FileTransferServiceImpl {
             .await
             .expect("Failed to open the file");
 
-        let mut buffer = bytes::BytesMut::with_capacity(init_request.chunk_size as usize);
+        debug_assert!(init_request.chunk_size > 0);
+        let mut buffer =
+            bytes::BytesMut::with_capacity(init_request.chunk_size.try_into().unwrap());
 
         let stream = stream! {
             let mut chunk_id = 0;

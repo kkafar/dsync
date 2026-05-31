@@ -9,6 +9,10 @@ impl SessionId {
     pub(crate) fn is_valid(&self) -> bool {
         self.0 >= 0
     }
+
+    pub(crate) fn raw_id(&self) -> i32 {
+        self.0
+    }
 }
 
 impl From<SessionId> for i32 {
